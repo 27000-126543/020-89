@@ -5,8 +5,8 @@ export const validateBatchNo = (batchNo: string, existingBatchNos: string[]): Va
   if (existingBatchNos.includes(batchNo)) {
     return {
       type: 'batch_duplicate',
-      message: `该批号「${batchNo}」已存在，请核对`,
-      level: 'error'
+      message: `该批号「${batchNo}」已存在，请核对规格、供应商是否一致`,
+      level: 'warning'
     };
   }
   return null;

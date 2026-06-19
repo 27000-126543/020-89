@@ -163,6 +163,7 @@ const QueryPage: React.FC = () => {
     totalQuantity: number;
     usedQuantity: number;
     lockedQuantity: number;
+    adjustedQuantity: number;
     availableQuantity: number;
   }) => (
     <View className={styles.stockGrid}>
@@ -183,6 +184,12 @@ const QueryPage: React.FC = () => {
           {stock.lockedQuantity}
         </Text>
         <Text className={styles.stockLabel}>锁定中</Text>
+      </View>
+      <View className={styles.stockItem}>
+        <Text className={classnames(styles.stockValue, styles.adjusted)}>
+          -{stock.adjustedQuantity}
+        </Text>
+        <Text className={styles.stockLabel}>调整</Text>
       </View>
       <View className={styles.stockItem}>
         <Text className={classnames(styles.stockValue, styles.available)}>
@@ -226,7 +233,7 @@ const QueryPage: React.FC = () => {
         <View className={styles.infoRow}>
           <Text className={styles.infoLabel}>库存状态</Text>
           <Text className={styles.infoValue}>
-            可用{implant.quantity - implant.usedQuantity - implant.lockedQuantity} / 共{implant.quantity}
+            可用{implant.quantity - implant.usedQuantity - implant.lockedQuantity - implant.adjustedQuantity} / 共{implant.quantity}
           </Text>
         </View>
       </View>
@@ -262,6 +269,41 @@ const QueryPage: React.FC = () => {
             </Text>
           </View>
         ))}
+    </View>
+  );
+
+  const renderAdjustmentRecords = (records: any[]) => (
+    <View className={styles.recordList}>
+      {records
+        .sort((a, b) => new Date(b.adjustedAt).getTime() - new Date(a.adjustedAt).getTime())
+        .map((record) => {
+          const typeMap: Record<string, { label: string }> = {
+            inventory_loss: { label: '盘亏' },
+            damage: { label: '破损' },
+            return: { label: '退货' },
+            other: { label: '其他' }
+          };
+          const info = typeMap[record.type] || typeMap.other;
+          return (
+            <View key={record.id} className={styles.recordItem}>
+              <View className={styles.recordHeader}>
+                <View className={styles.adjustTypeTag}>{info.label}</View>
+                <Text className={styles.recordQuantity}>-{record.quantity}</Text>
+              </View>
+              <View className={styles.recordInfo}>
+                <View className={styles.recordTag}>
+                  <Text className={styles.label}>原因:</Text>
+                  <Text className={styles.value}>{record.reason}</Text>
+                </View>
+                <View className={styles.recordTag}>
+                  <Text className={styles.label}>操作人:</Text>
+                  <Text className={styles.value}>{record.operator}</Text>
+                </View>
+              </View>
+              <Text className={styles.recordTime}>调整时间: {record.adjustedAt}</Text>
+            </View>
+          );
+        })}
     </View>
   );
 
@@ -366,7 +408,7 @@ const QueryPage: React.FC = () => {
                   {implant.brand} {implant.spec} · 入库 {implant.inboundDate}
                 </Text>
                 <Text className={styles.resultStock}>
-                  可用 {implant.quantity - implant.usedQuantity - implant.lockedQuantity} / 共 {implant.quantity}
+                  可用 {implant.quantity - implant.usedQuantity - implant.lockedQuantity - implant.adjustedQuantity} / 共 {implant.quantity}
                 </Text>
               </View>
               <Text className={styles.resultArrow}>›</Text>
@@ -482,6 +524,18 @@ const QueryPage: React.FC = () => {
                 renderRecords(singleDetail.usageRecords, 'usage')
               )}
             </View>
+
+            {singleDetail.adjustmentRecords.length > 0 && (
+              <View className={styles.recordsSection}>
+                <View className={styles.sectionHeader}>
+                  <Text className={styles.sectionTitle}>库存调整记录</Text>
+                  <Text className={styles.sectionCount}>
+                    共 {singleDetail.adjustmentRecords.length} 条
+                  </Text>
+                </View>
+                {renderAdjustmentRecords(singleDetail.adjustmentRecords)}
+              </View>
+            )}
           </>
         )}
 
@@ -552,7 +606,7 @@ const QueryPage: React.FC = () => {
                     </View>
                     <View className={styles.implantMiniInfo}>
                       <Text>入库: {implant.inboundDate}</Text>
-                      <Text>可用: {implant.quantity - implant.usedQuantity - implant.lockedQuantity}/{implant.quantity}</Text>
+                      <Text>可用: {implant.quantity - implant.usedQuantity - implant.lockedQuantity - implant.adjustedQuantity}/{implant.quantity}</Text>
                     </View>
                   </View>
                 ))}
@@ -584,6 +638,18 @@ const QueryPage: React.FC = () => {
                 renderRecords(batchSummary.usageRecords, 'usage')
               )}
             </View>
+
+            {batchSummary.adjustmentRecords.length > 0 && (
+              <View className={styles.recordsSection}>
+                <View className={styles.sectionHeader}>
+                  <Text className={styles.sectionTitle}>所有库存调整记录</Text>
+                  <Text className={styles.sectionCount}>
+                    共 {batchSummary.adjustmentRecords.length} 条
+                  </Text>
+                </View>
+                {renderAdjustmentRecords(batchSummary.adjustmentRecords)}
+              </View>
+            )}
           </>
         )}
       </View>

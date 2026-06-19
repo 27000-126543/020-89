@@ -1,159 +1,309 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Input, Button, ScrollView, Picker, Swiper, SwiperItem } from '@tarojs/components';
+import { View, Text, Button, ScrollView, Picker, Checkbox } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import dayjs from 'dayjs';
 import styles from './index.module.scss';
 import { useImplantStore } from '@/store/implantStore';
 import { daysUntilExpiry } from '@/utils/validator';
-import type { ImplantInfo, LockRecord } from '@/types/implant';
+import type { SurgeryStockpile, LockRecord, ImplantInfo } from '@/types/implant';
 import { DOCTORS } from '@/types/implant';
 
-type TabType = 'lock' | 'confirm';
+type TabType = 'stockpile' | 'confirm';
+type DateRange = 'today' | 'tomorrow' | 'week';
 
-interface LockForm {
-  doctorIndex: number;
-  patientInitial: string;
-  patientId: string;
+interface GroupKey {
   surgeryDate: string;
-  quantity: number;
+  doctor: string;
 }
 
-interface LockedSuccess {
-  record: LockRecord;
-  implant: ImplantInfo;
+interface GroupStats {
+  totalCases: number;
+  totalDemand: number;
+  lockedCount: number;
+  shortageCount: number;
 }
 
-const initialForm: LockForm = {
-  doctorIndex: 0,
-  patientInitial: '',
-  patientId: '',
-  surgeryDate: dayjs().format('YYYY-MM-DD'),
-  quantity: 1
+const DATE_RANGE_OPTIONS: DateRange[] = ['today', 'tomorrow', 'week'];
+const DATE_RANGE_LABELS: Record<DateRange, string> = {
+  today: '今天',
+  tomorrow: '明天',
+  week: '本周'
 };
+const DOCTOR_OPTIONS = ['全部医生', ...DOCTORS];
 
 const OutboundPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('lock');
-  const [selectedImplant, setSelectedImplant] = useState<ImplantInfo | null>(null);
-  const [formData, setFormData] = useState<LockForm>(initialForm);
-  const [lockedSuccess, setLockedSuccess] = useState<LockedSuccess | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [activeTab, setActiveTab] = useState<TabType>('stockpile');
+  const [dateRange, setDateRange] = useState<DateRange>('today');
+  const [doctorIndex, setDoctorIndex] = useState<number>(0);
+  const [selectedCaseKeys, setSelectedCaseKeys] = useState<Set<string>>(new Set());
+  const [expandedCases, setExpandedCases] = useState<Set<string>>(new Set());
 
   const {
     implants,
-    usageRecords,
+    getSurgeryStockpiles,
+    batchLockStockpiles,
     createLockRecord,
     confirmLockUsage,
     cancelLockRecord,
     getActiveLockRecords,
-    getAvailableImplants,
-    getLockRecordsByImplant
+    lockRecords
   } = useImplantStore();
 
-  const availableImplants = useMemo(() => getAvailableImplants(), [getAvailableImplants]);
-  const activeLockRecords = useMemo(() => getActiveLockRecords(), [getActiveLockRecords, implants]);
+  const selectedDoctor = doctorIndex === 0 ? undefined : DOCTOR_OPTIONS[doctorIndex];
 
-  const recentRecords = useMemo(() => {
-    return [...usageRecords]
-      .sort((a, b) => new Date(b.usedAt).getTime() - new Date(a.usedAt).getTime())
-      .slice(0, 10);
-  }, [usageRecords]);
+  const stockpiles = useMemo(() => {
+    return getSurgeryStockpiles(dateRange, selectedDoctor);
+  }, [dateRange, selectedDoctor, getSurgeryStockpiles, lockRecords, implants]);
 
-  const availableQuantity = useMemo(() => {
-    if (!selectedImplant) return 0;
-    const latest = implants.find((i) => i.id === selectedImplant.id);
-    if (!latest) return 0;
-    return latest.quantity - latest.usedQuantity - latest.lockedQuantity;
-  }, [selectedImplant, implants]);
+  const activeLockRecords = useMemo(() => getActiveLockRecords(), [getActiveLockRecords, lockRecords]);
 
-  const isLockFormValid = selectedImplant &&
-    formData.patientInitial &&
-    formData.surgeryDate &&
-    formData.quantity > 0 &&
-    formData.quantity <= availableQuantity;
+  const { groups, groupKeys } = useMemo(() => {
+    const map = new Map<string, SurgeryStockpile[]>();
+    const keyOrder: GroupKey[] = [];
+    const seen = new Set<string>();
 
-  const handleScan = () => {
-    Taro.scanCode({
-      onlyFromCamera: false,
+    stockpiles.forEach((sp) => {
+      const key = `${sp.surgeryDate}||${sp.doctor}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        keyOrder.push({ surgeryDate: sp.surgeryDate, doctor: sp.doctor });
+        map.set(key, []);
+      }
+      map.get(key)!.push(sp);
+    });
+
+    return { groups: map, groupKeys: keyOrder };
+  }, [stockpiles]);
+
+  const getCaseKey = (sp: SurgeryStockpile) =>
+    `${sp.surgeryDate}||${sp.doctor}||${sp.patientId}||${sp.brand}||${sp.spec}`;
+
+  const getGroupStats = (items: SurgeryStockpile[]): GroupStats => {
+    let totalCases = items.length;
+    let totalDemand = 0;
+    let lockedCount = 0;
+    let shortageCount = 0;
+
+    items.forEach((sp) => {
+      totalDemand += sp.requiredQuantity;
+      if (sp.status === 'locked') lockedCount++;
+      if (sp.hasShortage) shortageCount++;
+    });
+
+    return { totalCases, totalDemand, lockedCount, shortageCount };
+  };
+
+  const getStockpileStatusType = (sp: SurgeryStockpile): 'locked' | 'partial' | 'shortage' | 'pending' => {
+    if (sp.status === 'locked') return 'locked';
+    if (sp.status === 'partial') return 'partial';
+    if (sp.hasShortage) return 'shortage';
+    return 'pending';
+  };
+
+  const getStatusLabel = (type: 'locked' | 'partial' | 'shortage' | 'pending') => {
+    const map = {
+      locked: '已锁定',
+      partial: '部分锁定',
+      shortage: '库存不足',
+      pending: '待备货'
+    };
+    return map[type];
+  };
+
+  const getExpiryClass = (expiryDate: string) => {
+    const days = daysUntilExpiry(expiryDate);
+    if (days < 0) return styles.expiryError;
+    if (days < 180) return styles.expiryWarn;
+    return '';
+  };
+
+  const findNearestSufficientBatch = (sp: SurgeryStockpile) => {
+    const sorted = [...sp.availableBatches].sort((a, b) =>
+      dayjs(a.expiryDate).diff(dayjs(b.expiryDate), 'day')
+    );
+    let remaining = sp.requiredQuantity;
+    if (sp.status === 'locked' && sp.lockedImplantId) {
+      const lockRec = lockRecords.find(l => l.id === sp.lockRecordId && l.status === 'locked');
+      if (lockRec) {
+        remaining = Math.max(0, sp.requiredQuantity - lockRec.quantity);
+      }
+    }
+    if (remaining <= 0) return null;
+    return sorted.find(b => b.availableQuantity >= remaining) || null;
+  };
+
+  const toggleCaseSelection = (caseKey: string, sp: SurgeryStockpile) => {
+    const next = new Set(selectedCaseKeys);
+    if (next.has(caseKey)) {
+      next.delete(caseKey);
+    } else {
+      if (getStockpileStatusType(sp) === 'locked') {
+        Taro.showToast({ title: '该病例已锁定', icon: 'none' });
+        return;
+      }
+      if (getStockpileStatusType(sp) === 'shortage') {
+        Taro.showToast({ title: '库存不足无法锁定', icon: 'none' });
+        return;
+      }
+      next.add(caseKey);
+    }
+    setSelectedCaseKeys(next);
+  };
+
+  const toggleCaseExpand = (caseKey: string) => {
+    const next = new Set(expandedCases);
+    if (next.has(caseKey)) {
+      next.delete(caseKey);
+    } else {
+      next.add(caseKey);
+    }
+    setExpandedCases(next);
+  };
+
+  const selectableCases = useMemo(() => {
+    return stockpiles.filter((sp) => {
+      const t = getStockpileStatusType(sp);
+      return t !== 'locked' && t !== 'shortage';
+    });
+  }, [stockpiles]);
+
+  const allSelectableSelected = selectableCases.length > 0 &&
+    selectableCases.every((sp) => selectedCaseKeys.has(getCaseKey(sp)));
+
+  const toggleSelectAll = () => {
+    if (allSelectableSelected) {
+      setSelectedCaseKeys(new Set());
+    } else {
+      const next = new Set<string>();
+      selectableCases.forEach((sp) => next.add(getCaseKey(sp)));
+      setSelectedCaseKeys(next);
+    }
+  };
+
+  const handleQuickLock = (sp: SurgeryStockpile) => {
+    if (sp.status === 'locked') {
+      Taro.showToast({ title: '该病例已锁定', icon: 'none' });
+      return;
+    }
+
+    const batch = findNearestSufficientBatch(sp);
+    if (!batch) {
+      Taro.showToast({ title: '没有足够库存的批次', icon: 'none' });
+      return;
+    }
+
+    const existingLockQty = sp.status === 'partial' && sp.lockRecordId
+      ? (lockRecords.find(l => l.id === sp.lockRecordId && l.status === 'locked')?.quantity || 0)
+      : 0;
+    const needQty = Math.max(0, sp.requiredQuantity - existingLockQty);
+
+    Taro.showModal({
+      title: '确认快速锁定',
+      content: `锁定 ${batch.batchNo} (效期 ${batch.expiryDate}) 共 ${needQty} 支？`,
       success: (res) => {
-        console.log('[Outbound] 扫码结果:', res);
-        const barcode = res.result;
-        const implant = availableImplants.find((i) => i.barcode === barcode);
+        if (!res.confirm) return;
 
-        if (!implant) {
-          setErrorMsg(`未找到条码为「${barcode}」的可用种植体，请确认是否已入库`);
-          setSelectedImplant(null);
-          Taro.vibrateShort({ type: 'heavy' });
-          return;
-        }
+        const result = createLockRecord({
+          implantId: batch.implantId,
+          batchNo: batch.batchNo,
+          brand: sp.brand,
+          spec: sp.spec,
+          doctor: sp.doctor,
+          patientInitial: sp.patientInitial,
+          patientId: sp.patientId,
+          surgeryDate: sp.surgeryDate,
+          quantity: needQty,
+          operator: '当前护士'
+        });
 
-        const implantLatest = implants.find((i) => i.id === implant.id);
-        if (implantLatest) {
-          const available = implantLatest.quantity - implantLatest.usedQuantity - implantLatest.lockedQuantity;
-          if (available <= 0) {
-            setErrorMsg(`该批号「${implant.batchNo}」已无可用库存`);
-            setSelectedImplant(null);
-            Taro.vibrateShort({ type: 'heavy' });
-            return;
-          }
-          setSelectedImplant(implantLatest);
+        if (result) {
+          Taro.vibrateShort({ type: 'medium' });
+          Taro.showToast({ title: '锁定成功', icon: 'success' });
         } else {
-          setSelectedImplant(implant);
+          Taro.showToast({ title: '锁定失败', icon: 'none' });
         }
-
-        setErrorMsg('');
-        setLockedSuccess(null);
-        Taro.vibrateShort({ type: 'light' });
-        Taro.showToast({ title: '扫码成功', icon: 'success' });
-      },
-      fail: (err) => {
-        console.error('[Outbound] 扫码失败:', err);
-        Taro.showToast({ title: '扫码失败', icon: 'none' });
       }
     });
   };
 
-  const handleInputChange = (field: keyof LockForm, value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleCreateLock = () => {
-    if (!selectedImplant || !isLockFormValid) return;
+  const handleCancelLock = (sp: SurgeryStockpile) => {
+    if (!sp.lockRecordId) return;
+    const lock = lockRecords.find(l => l.id === sp.lockRecordId);
+    if (!lock) return;
 
     Taro.showModal({
-      title: '确认术前锁定',
-      content: `确认锁定 ${selectedImplant.brand} ${selectedImplant.spec} 共 ${formData.quantity} 支吗？锁定后该库存将被保留。`,
+      title: '取消锁定',
+      content: `确定取消 ${lock.brand} ${lock.spec} × ${lock.quantity} 的锁定吗？`,
       success: (res) => {
         if (!res.confirm) return;
+        const ok = cancelLockRecord(sp.lockRecordId!);
+        Taro.showToast({ title: ok ? '已取消' : '操作失败', icon: ok ? 'success' : 'none' });
+      }
+    });
+  };
 
-        const lockRecord = createLockRecord({
-          implantId: selectedImplant.id,
-          batchNo: selectedImplant.batchNo,
-          brand: selectedImplant.brand,
-          spec: selectedImplant.spec,
-          doctor: DOCTORS[formData.doctorIndex],
-          patientInitial: formData.patientInitial,
-          patientId: formData.patientId,
-          surgeryDate: formData.surgeryDate,
-          quantity: formData.quantity,
-          operator: '当前护士'
+  const handleBatchLock = () => {
+    const items: {
+      surgeryDate: string;
+      doctor: string;
+      patientInitial: string;
+      patientId: string;
+      implantId: string;
+      quantity: number;
+      operator: string;
+      brand: string;
+      spec: string;
+      batchNo: string;
+    }[] = [];
+    let skipped = 0;
+
+    stockpiles.forEach((sp) => {
+      if (!selectedCaseKeys.has(getCaseKey(sp))) return;
+      const batch = findNearestSufficientBatch(sp);
+      if (!batch) {
+        skipped++;
+        return;
+      }
+      const existingLockQty = sp.status === 'partial' && sp.lockRecordId
+        ? (lockRecords.find(l => l.id === sp.lockRecordId && l.status === 'locked')?.quantity || 0)
+        : 0;
+      const needQty = Math.max(0, sp.requiredQuantity - existingLockQty);
+      if (needQty <= 0) {
+        skipped++;
+        return;
+      }
+      items.push({
+        surgeryDate: sp.surgeryDate,
+        doctor: sp.doctor,
+        patientInitial: sp.patientInitial,
+        patientId: sp.patientId,
+        implantId: batch.implantId,
+        quantity: needQty,
+        operator: '当前护士',
+        brand: sp.brand,
+        spec: sp.spec,
+        batchNo: batch.batchNo
+      });
+    });
+
+    if (items.length === 0) {
+      Taro.showToast({ title: '没有可锁定的项', icon: 'none' });
+      return;
+    }
+
+    Taro.showModal({
+      title: '批量锁定',
+      content: `共 ${items.length} 项${skipped > 0 ? ` (跳过${skipped}项)` : ''}，确认锁定？`,
+      success: (res) => {
+        if (!res.confirm) return;
+        const results = batchLockStockpiles(items);
+        setSelectedCaseKeys(new Set());
+        Taro.vibrateShort({ type: 'medium' });
+        Taro.showToast({
+          title: `成功 ${results.length}/${items.length}`,
+          icon: results.length === items.length ? 'success' : 'none'
         });
-
-        if (lockRecord) {
-          const updatedImplant = implants.find((i) => i.id === selectedImplant.id);
-          if (updatedImplant) {
-            setSelectedImplant(updatedImplant);
-          }
-          setLockedSuccess({
-            record: lockRecord,
-            implant: selectedImplant
-          });
-          setFormData(initialForm);
-          Taro.vibrateShort({ type: 'medium' });
-          Taro.showToast({ title: '锁定成功', icon: 'success' });
-        } else {
-          Taro.showToast({ title: '锁定失败，请重试', icon: 'none' });
-        }
       }
     });
   };
@@ -164,87 +314,64 @@ const OutboundPage: React.FC = () => {
       content: `确认将 ${lockRecord.brand} ${lockRecord.spec} × ${lockRecord.quantity} 转为已使用吗？此操作不可撤销。`,
       success: (res) => {
         if (!res.confirm) return;
-
-        const success = confirmLockUsage(lockRecord.id);
-        if (success) {
-          if (selectedImplant && selectedImplant.id === lockRecord.implantId) {
-            const updatedImplant = implants.find((i) => i.id === lockRecord.implantId);
-            if (updatedImplant) {
-              setSelectedImplant(updatedImplant);
-            }
-          }
-          Taro.showToast({ title: '已确认使用', icon: 'success' });
-        } else {
-          Taro.showToast({ title: '操作失败，请重试', icon: 'none' });
-        }
+        const ok = confirmLockUsage(lockRecord.id);
+        Taro.showToast({ title: ok ? '已确认使用' : '操作失败', icon: ok ? 'success' : 'none' });
       }
     });
   };
 
-  const handleCancelLock = (lockRecord: LockRecord) => {
+  const handleCancelLockFromConfirm = (lockRecord: LockRecord) => {
     Taro.showModal({
       title: '取消锁定',
       content: `确定取消 ${lockRecord.brand} ${lockRecord.spec} × ${lockRecord.quantity} 的锁定吗？库存将被释放。`,
       success: (res) => {
         if (!res.confirm) return;
-
-        const success = cancelLockRecord(lockRecord.id);
-        if (success) {
-          if (selectedImplant && selectedImplant.id === lockRecord.implantId) {
-            const updatedImplant = implants.find((i) => i.id === lockRecord.implantId);
-            if (updatedImplant) {
-              setSelectedImplant(updatedImplant);
-            }
-          }
-          Taro.showToast({ title: '已取消锁定', icon: 'success' });
-        } else {
-          Taro.showToast({ title: '操作失败，请重试', icon: 'none' });
-        }
+        const ok = cancelLockRecord(lockRecord.id);
+        Taro.showToast({ title: ok ? '已取消锁定' : '操作失败', icon: ok ? 'success' : 'none' });
       }
     });
   };
 
   const getStockClass = (available: number, total: number) => {
-    const ratio = available / total;
+    const ratio = total > 0 ? available / total : 0;
     if (ratio <= 0.2) return styles.stockLow;
     return styles.stockNormal;
   };
 
-  const getExpiryClass = (expiryDate: string) => {
-    const days = daysUntilExpiry(expiryDate);
-    if (days < 0) return styles.expiryError;
-    if (days < 180) return styles.expiryWarning;
-    return '';
-  };
-
   const handleRefresh = () => {
     Taro.stopPullDownRefresh();
-    if (selectedImplant) {
-      const latest = implants.find((i) => i.id === selectedImplant.id);
-      if (latest) setSelectedImplant(latest);
-    }
   };
 
   React.useEffect(() => {
     const unlisten = Taro.onPullDownRefresh(handleRefresh);
     return () => unlisten?.();
-  }, [implants, selectedImplant]);
+  }, []);
+
+  const formatDate = (d: string) => {
+    const date = dayjs(d);
+    const today = dayjs().format('YYYY-MM-DD');
+    const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
+    if (d === today) return `今天 (${date.format('MM-DD')})`;
+    if (d === tomorrow) return `明天 (${date.format('MM-DD')})`;
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    return `${weekdays[date.day()]} (${date.format('MM-DD')})`;
+  };
 
   return (
     <ScrollView className={styles.page} scrollY>
       <View className={styles.header}>
         <Text className={styles.headerTitle}>椅旁领用</Text>
-        <Text className={styles.headerSubtitle}>术前锁定库存，术后确认使用</Text>
+        <Text className={styles.headerSubtitle}>术前备货锁定，术后确认使用</Text>
       </View>
 
       <View className={styles.tabs}>
         <View
-          className={classnames(styles.tab, activeTab === 'lock' && styles.activeTab)}
-          onClick={() => setActiveTab('lock')}
+          className={classnames(styles.tab, activeTab === 'stockpile' && styles.activeTab)}
+          onClick={() => setActiveTab('stockpile')}
         >
-          <Text className={styles.tabText}>术前锁定</Text>
-          {activeLockRecords.length > 0 && (
-            <View className={styles.tabBadge}>{activeLockRecords.length}</View>
+          <Text className={styles.tabText}>术前备货</Text>
+          {stockpiles.length > 0 && (
+            <View className={styles.tabBadge}>{stockpiles.length}</View>
           )}
         </View>
         <View
@@ -252,180 +379,269 @@ const OutboundPage: React.FC = () => {
           onClick={() => setActiveTab('confirm')}
         >
           <Text className={styles.tabText}>术后确认</Text>
+          {activeLockRecords.length > 0 && (
+            <View className={styles.tabBadge}>{activeLockRecords.length}</View>
+          )}
         </View>
-        <View className={styles.tabIndicator} style={{ left: activeTab === 'lock' ? '0%' : '50%' }} />
+        <View className={styles.tabIndicator} style={{ left: activeTab === 'stockpile' ? '0%' : '50%' }} />
       </View>
 
-      {activeTab === 'lock' && (
+      {activeTab === 'stockpile' && (
         <>
-          <View className={styles.scanSection}>
-            <Button className={styles.scanButton} onClick={handleScan}>
-              <Text className={styles.scanIcon}>⌖</Text>
-              <Text className={styles.scanText}>扫描种植体条码</Text>
-            </Button>
+          <View className={styles.filterSection}>
+            <View className={styles.dateTabs}>
+              {DATE_RANGE_OPTIONS.map((range) => (
+                <View
+                  key={range}
+                  className={classnames(styles.dateTab, dateRange === range && styles.activeDateTab)}
+                  onClick={() => {
+                    setDateRange(range);
+                    setSelectedCaseKeys(new Set());
+                  }}
+                >
+                  {DATE_RANGE_LABELS[range]}
+                </View>
+              ))}
+            </View>
+
+            <View className={styles.doctorPickerWrap}>
+              <Text className={styles.doctorLabel}>筛选医生</Text>
+              <Picker
+                mode='selector'
+                range={DOCTOR_OPTIONS}
+                value={doctorIndex}
+                onChange={(e) => {
+                  setDoctorIndex(Number(e.detail.value));
+                  setSelectedCaseKeys(new Set());
+                }}
+              >
+                <View className={styles.doctorPicker}>
+                  {DOCTOR_OPTIONS[doctorIndex]}
+                  <Text className={styles.pickerArrow}>▾</Text>
+                </View>
+              </Picker>
+            </View>
           </View>
 
-          {errorMsg && (
-            <View className={styles.warningCard}>
-              <Text className={styles.warningIcon}>!</Text>
-              <Text>{errorMsg}</Text>
-            </View>
-          )}
-
-          {selectedImplant && (
-            <>
-              <View className={styles.productCard}>
-                <View className={styles.productHeader}>
-                  <View className={styles.productInfo}>
-                    <Text className={styles.productBrand}>{selectedImplant.brand}</Text>
-                    <Text className={styles.productSpec}>{selectedImplant.spec}</Text>
-                  </View>
-                </View>
-
-                <View className={styles.productTags}>
-                  <View className={styles.tag}>
-                    批号
-                    <Text className={styles.highlight}>{selectedImplant.batchNo}</Text>
-                  </View>
-                  <View className={classnames(styles.tag, getExpiryClass(selectedImplant.expiryDate))}>
-                    有效期
-                    <Text className={styles.highlight}>{selectedImplant.expiryDate}</Text>
-                  </View>
-                  <View className={styles.tag}>
-                    供应商
-                    <Text className={styles.highlight}>{selectedImplant.supplier}</Text>
-                  </View>
-                  <View className={classnames(styles.tag, getStockClass(availableQuantity, selectedImplant.quantity))}>
-                    可用库存
-                    <Text className={styles.highlight}>{availableQuantity} / {selectedImplant.quantity}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View className={styles.formSection}>
-                <Text className={styles.sectionTitle}>锁定信息</Text>
-
-                <View className={styles.formItem}>
-                  <Text className={styles.formLabel}>主治医生</Text>
-                  <Picker
-                    mode='selector'
-                    range={DOCTORS}
-                    value={formData.doctorIndex}
-                    onChange={(e) => handleInputChange('doctorIndex', Number(e.detail.value))}
+          {stockpiles.length > 0 && (
+            <View className={styles.batchActionBar}>
+              <View className={styles.batchLeft}>
+                <View className={styles.checkboxWrap}>
+                  <View
+                    className={classnames(styles.checkbox, allSelectableSelected && styles.checked)}
+                    onClick={toggleSelectAll}
                   >
-                    <View className={styles.formInput}>
-                      {DOCTORS[formData.doctorIndex]}
-                    </View>
-                  </Picker>
-                </View>
-
-                <View className={styles.formRow}>
-                  <View className={styles.formItem}>
-                    <Text className={styles.formLabel}>患者姓名首字</Text>
-                    <Input
-                      className={styles.formInput}
-                      placeholder='如: 张'
-                      value={formData.patientInitial}
-                      onInput={(e) => handleInputChange('patientInitial', e.detail.value)}
-                      maxlength={1}
-                    />
-                    <Text className={styles.patientHint}>输入患者姓氏</Text>
-                  </View>
-
-                  <View className={styles.formItem}>
-                    <Text className={styles.formLabel}>病历号(选填)</Text>
-                    <Input
-                      className={styles.formInput}
-                      placeholder='病历号'
-                      value={formData.patientId}
-                      onInput={(e) => handleInputChange('patientId', e.detail.value)}
-                    />
+                    {allSelectableSelected && <Text className={styles.checkmark}>✓</Text>}
                   </View>
                 </View>
-
-                <View className={styles.formRow}>
-                  <View className={styles.formItem}>
-                    <Text className={styles.formLabel}>手术日期</Text>
-                    <Picker
-                      mode='date'
-                      value={formData.surgeryDate}
-                      start={dayjs().format('YYYY-MM-DD')}
-                      onChange={(e) => handleInputChange('surgeryDate', e.detail.value)}
-                    >
-                      <View className={styles.formInput}>
-                        {formData.surgeryDate}
-                      </View>
-                    </Picker>
-                  </View>
-
-                  <View className={styles.formItem}>
-                    <Text className={styles.formLabel}>锁定数量</Text>
-                    <Input
-                      className={styles.formInput}
-                      type='number'
-                      placeholder='数量'
-                      value={String(formData.quantity)}
-                      onInput={(e) => handleInputChange('quantity', Number(e.detail.value) || 0)}
-                    />
-                  </View>
-                </View>
+                <Text className={styles.selectedCount}>
+                  已选 <Text className={styles.count}>{selectedCaseKeys.size}</Text> 项
+                </Text>
               </View>
-            </>
-          )}
-
-          {lockedSuccess && (
-            <View className={styles.confirmCard}>
-              <View className={styles.confirmHeader}>
-                <View className={styles.confirmIcon}>✓</View>
-                <Text className={styles.confirmTitle}>已锁定到该病例</Text>
-              </View>
-              <View className={styles.confirmDetail}>
-                <View className={styles.confirmRow}>
-                  <Text className={styles.confirmLabel}>种植体</Text>
-                  <Text className={styles.confirmValue}>
-                    {lockedSuccess.implant.brand} {lockedSuccess.implant.spec}
-                  </Text>
-                </View>
-                <View className={styles.confirmRow}>
-                  <Text className={styles.confirmLabel}>批号</Text>
-                  <Text className={styles.confirmValue}>{lockedSuccess.record.batchNo}</Text>
-                </View>
-                <View className={styles.confirmRow}>
-                  <Text className={styles.confirmLabel}>医生</Text>
-                  <Text className={styles.confirmValue}>{lockedSuccess.record.doctor}</Text>
-                </View>
-                <View className={styles.confirmRow}>
-                  <Text className={styles.confirmLabel}>患者</Text>
-                  <Text className={styles.confirmValue}>
-                    {lockedSuccess.record.patientInitial}XX
-                    {lockedSuccess.record.patientId && ` (${lockedSuccess.record.patientId})`}
-                  </Text>
-                </View>
-                <View className={styles.confirmRow}>
-                  <Text className={styles.confirmLabel}>手术日期</Text>
-                  <Text className={styles.confirmValue}>{lockedSuccess.record.surgeryDate}</Text>
-                </View>
-                <View className={styles.confirmRow}>
-                  <Text className={styles.confirmLabel}>锁定数量</Text>
-                  <Text className={styles.confirmValue}>{lockedSuccess.record.quantity} 支</Text>
-                </View>
-                <View className={styles.confirmRow}>
-                  <Text className={styles.confirmLabel}>锁定时间</Text>
-                  <Text className={styles.confirmValue}>{lockedSuccess.record.lockedAt}</Text>
-                </View>
-              </View>
+              <Button
+                className={classnames(styles.batchLockBtn, selectedCaseKeys.size === 0 && styles.disabled)}
+                onClick={handleBatchLock}
+                disabled={selectedCaseKeys.size === 0}
+              >
+                一键锁定选中项
+              </Button>
             </View>
           )}
 
-          {selectedImplant && (
-            <View className={styles.footerBar}>
-              <Button
-                className={classnames(styles.confirmButton, !isLockFormValid && styles.disabled)}
-                onClick={handleCreateLock}
-                disabled={!isLockFormValid}
-              >
-                术前锁定
-              </Button>
+          {stockpiles.length === 0 ? (
+            <View className={styles.emptyState} style={{ margin: '0 32rpx' }}>
+              暂无备货清单
+            </View>
+          ) : (
+            <View className={styles.stockpileList}>
+              {groupKeys.map(({ surgeryDate, doctor }) => {
+                const items = groups.get(`${surgeryDate}||${doctor}`)!;
+                const stats = getGroupStats(items);
+                return (
+                  <View key={`${surgeryDate}||${doctor}`} className={styles.stockpileGroup}>
+                    <View className={styles.groupHeader}>
+                      <View className={styles.groupTitle}>
+                        <Text className={styles.groupDate}>{formatDate(surgeryDate)}</Text>
+                        <Text className={styles.groupDoctor}>{doctor}</Text>
+                      </View>
+                      <View className={styles.groupStats}>
+                        <View className={styles.statItem}>
+                          <Text className={classnames(styles.statValue, styles.total)}>{stats.totalCases}</Text>
+                          <Text className={styles.statLabel}>总病例</Text>
+                        </View>
+                        <View className={styles.statItem}>
+                          <Text className={classnames(styles.statValue, styles.demand)}>{stats.totalDemand}</Text>
+                          <Text className={styles.statLabel}>总需求</Text>
+                        </View>
+                        <View className={styles.statItem}>
+                          <Text className={classnames(styles.statValue, styles.locked)}>{stats.lockedCount}</Text>
+                          <Text className={styles.statLabel}>已锁定</Text>
+                        </View>
+                        <View className={styles.statItem}>
+                          <Text className={classnames(styles.statValue, styles.shortage)}>{stats.shortageCount}</Text>
+                          <Text className={styles.statLabel}>缺位数</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View className={styles.caseList}>
+                      {items.map((sp) => {
+                        const caseKey = getCaseKey(sp);
+                        const statusType = getStockpileStatusType(sp);
+                        const isExpanded = expandedCases.has(caseKey);
+                        const isSelected = selectedCaseKeys.has(caseKey);
+                        const canSelect = statusType !== 'locked' && statusType !== 'shortage';
+                        const nearestBatch = sp.availableBatches[0];
+                        const existingLockQty = (sp.status === 'locked' || sp.status === 'partial') && sp.lockRecordId
+                          ? (lockRecords.find(l => l.id === sp.lockRecordId && l.status === 'locked')?.quantity || 0)
+                          : 0;
+                        const canQuickLock = (sp.status !== 'locked') &&
+                          findNearestSufficientBatch(sp) !== null;
+
+                        return (
+                          <View
+                            key={caseKey}
+                            className={classnames(styles.caseCard, isExpanded && styles.expanded)}
+                          >
+                            <View
+                              className={styles.caseHeader}
+                              onClick={() => toggleCaseExpand(caseKey)}
+                            >
+                              <View
+                                className={styles.caseCheckbox}
+                                onClick={(e) => {
+                                  e.stopPropagation?.();
+                                  if (canSelect) toggleCaseSelection(caseKey, sp);
+                                }}
+                              >
+                                <View
+                                  className={classnames(
+                                    styles.checkbox,
+                                    !canSelect && { opacity: 0.4 },
+                                    isSelected && styles.checked
+                                  )}
+                                >
+                                  {isSelected && <Text className={styles.checkmark}>✓</Text>}
+                                </View>
+                              </View>
+
+                              <View className={styles.patientAvatar}>
+                                {sp.patientInitial}
+                              </View>
+
+                              <View className={styles.caseInfo}>
+                                <View className={styles.caseRow1}>
+                                  <Text className={styles.caseProduct}>
+                                    {sp.brand} {sp.spec}
+                                  </Text>
+                                  <View className={classnames(styles.statusTag, styles[statusType])}>
+                                    {getStatusLabel(statusType)}
+                                  </View>
+                                </View>
+
+                                <View className={styles.caseMeta}>
+                                  <View className={styles.metaItem}>
+                                    <Text className={styles.metaLabel}>病历号</Text>
+                                    <Text className={styles.metaValue}>{sp.patientId || '-'}</Text>
+                                  </View>
+                                  <View className={styles.metaItem}>
+                                    <Text className={styles.metaLabel}>医生</Text>
+                                    <Text className={styles.metaValue}>{sp.doctor}</Text>
+                                  </View>
+                                  <View className={styles.metaItem}>
+                                    <Text className={styles.metaLabel}>手术日期</Text>
+                                    <Text className={styles.metaValue}>{sp.surgeryDate}</Text>
+                                  </View>
+                                </View>
+
+                                <View className={styles.quantityBadge}>
+                                  需求 {sp.requiredQuantity} 支
+                                  {existingLockQty > 0 && ` · 已锁定 ${existingLockQty}`}
+                                  {sp.shortageQuantity > 0 && ` · 缺 ${sp.shortageQuantity}`}
+                                </View>
+                              </View>
+
+                              <View className={classnames(styles.expandIcon, isExpanded && styles.rotated)}>
+                                ›
+                              </View>
+                            </View>
+
+                            {isExpanded && (
+                              <View className={styles.caseBody}>
+                                <Text className={styles.batchSectionTitle}>可用批次（按效期排序）</Text>
+
+                                <View className={styles.batchList}>
+                                  {sp.availableBatches.length === 0 && (
+                                    <View style={{ padding: '24rpx', textAlign: 'center', color: '#999' }}>
+                                      暂无可用批次
+                                    </View>
+                                  )}
+                                  {sp.availableBatches.map((batch, idx) => {
+                                    const isNearest = idx === 0;
+                                    const remainingNeed = sp.requiredQuantity - existingLockQty;
+                                    const insufficient = batch.availableQuantity < remainingNeed;
+                                    const qtyClass =
+                                      batch.availableQuantity === 0 ? styles.zero :
+                                        batch.availableQuantity < 3 ? styles.low : '';
+
+                                    return (
+                                      <View
+                                        key={batch.batchNo}
+                                        className={classnames(
+                                          styles.batchItem,
+                                          insufficient && styles.insufficient,
+                                          !insufficient && isNearest && styles.nearest
+                                        )}
+                                      >
+                                        <View className={styles.batchInfo}>
+                                          <View className={styles.batchNoRow}>
+                                            <Text className={styles.batchNo}>{batch.batchNo}</Text>
+                                            {!insufficient && isNearest && (
+                                              <Text className={styles.nearestTag}>最近效期</Text>
+                                            )}
+                                          </View>
+                                          <Text className={classnames(styles.batchExpiry, getExpiryClass(batch.expiryDate))}>
+                                            效期 {batch.expiryDate}
+                                          </Text>
+                                        </View>
+                                        <View className={styles.batchAvailable}>
+                                          <Text className={classnames(styles.qty, qtyClass)}>
+                                            {batch.availableQuantity}
+                                          </Text>
+                                          <Text className={styles.qtyLabel}>可用</Text>
+                                        </View>
+                                      </View>
+                                    );
+                                  })}
+                                </View>
+
+                                <View className={styles.actionRow}>
+                                  {sp.status === 'locked' && sp.lockRecordId ? (
+                                    <Button
+                                      className={styles.cancelLockBtn}
+                                      onClick={() => handleCancelLock(sp)}
+                                    >
+                                      取消锁定
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      className={classnames(styles.quickLockBtn, !canQuickLock && styles.disabled)}
+                                      onClick={() => handleQuickLock(sp)}
+                                      disabled={!canQuickLock}
+                                    >
+                                      快速锁定（选最近效期）
+                                    </Button>
+                                  )}
+                                </View>
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
           )}
         </>
@@ -444,6 +660,9 @@ const OutboundPage: React.FC = () => {
             <View className={styles.lockList}>
               {activeLockRecords.map((record) => {
                 const implant = implants.find((i) => i.id === record.implantId);
+                const available = implant
+                  ? implant.quantity - implant.usedQuantity - implant.lockedQuantity - implant.adjustedQuantity
+                  : 0;
                 return (
                   <View key={record.id} className={styles.lockItem}>
                     <View className={styles.lockHeader}>
@@ -482,14 +701,9 @@ const OutboundPage: React.FC = () => {
                           有效期
                           <Text className={styles.highlight}>{implant.expiryDate}</Text>
                         </View>
-                        <View className={classnames(styles.tag, getStockClass(
-                          implant.quantity - implant.usedQuantity - implant.lockedQuantity,
-                          implant.quantity
-                        ))}>
+                        <View className={classnames(styles.tag, getStockClass(available, implant.quantity))}>
                           可用
-                          <Text className={styles.highlight}>
-                            {implant.quantity - implant.usedQuantity - implant.lockedQuantity}
-                          </Text>
+                          <Text className={styles.highlight}>{available}</Text>
                         </View>
                       </View>
                     )}
@@ -497,7 +711,7 @@ const OutboundPage: React.FC = () => {
                     <View className={styles.lockActions}>
                       <Button
                         className={classnames(styles.actionBtn, styles.cancelBtn)}
-                        onClick={() => handleCancelLock(record)}
+                        onClick={() => handleCancelLockFromConfirm(record)}
                       >
                         取消锁定
                       </Button>
@@ -516,48 +730,7 @@ const OutboundPage: React.FC = () => {
         </View>
       )}
 
-      {activeTab === 'lock' && selectedImplant && (
-        <View style={{ height: 120 }} />
-      )}
-
-      <View className={styles.recordsSection}>
-        <View className={styles.recordsHeader}>
-          <Text className={styles.recordsTitle}>近期使用记录</Text>
-          <Text className={styles.recordCount}>共 {recentRecords.length} 条</Text>
-        </View>
-
-        {recentRecords.length === 0 ? (
-          <View className={styles.emptyState}>暂无使用记录</View>
-        ) : (
-          <View className={styles.recordList}>
-            {recentRecords.map((record) => (
-              <View key={record.id} className={styles.recordItem}>
-                <View className={styles.recordHeader}>
-                  <Text className={styles.recordProduct}>
-                    {record.brand} {record.spec} × {record.quantity}
-                  </Text>
-                  <Text className={styles.recordBatch}>{record.batchNo}</Text>
-                </View>
-                <View className={styles.recordInfo}>
-                  <View className={styles.recordTag}>
-                    <Text className={styles.label}>医生:</Text>
-                    <Text className={styles.value}>{record.doctor}</Text>
-                  </View>
-                  <View className={styles.recordTag}>
-                    <Text className={styles.label}>患者:</Text>
-                    <Text className={styles.value}>{record.patientInitial}XX</Text>
-                  </View>
-                  <View className={styles.recordTag}>
-                    <Text className={styles.label}>手术:</Text>
-                    <Text className={styles.value}>{record.surgeryDate}</Text>
-                  </View>
-                </View>
-                <Text className={styles.recordTime}>使用时间: {record.usedAt}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 };

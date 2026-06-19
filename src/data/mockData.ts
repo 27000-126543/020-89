@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import type { ImplantInfo, UsageRecord, LockRecord } from '@/types/implant';
+import type { ImplantInfo, UsageRecord, LockRecord, AdjustmentRecord } from '@/types/implant';
 
 export const mockImplants: ImplantInfo[] = [
   {
@@ -14,7 +14,8 @@ export const mockImplants: ImplantInfo[] = [
     inboundDate: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
     status: 'locked',
     usedQuantity: 5,
-    lockedQuantity: 2
+    lockedQuantity: 2,
+    adjustedQuantity: 0
   },
   {
     id: 'impl_002',
@@ -28,7 +29,8 @@ export const mockImplants: ImplantInfo[] = [
     inboundDate: dayjs().subtract(60, 'day').format('YYYY-MM-DD'),
     status: 'partial_used',
     usedQuantity: 8,
-    lockedQuantity: 0
+    lockedQuantity: 0,
+    adjustedQuantity: 1
   },
   {
     id: 'impl_003',
@@ -42,7 +44,8 @@ export const mockImplants: ImplantInfo[] = [
     inboundDate: dayjs().subtract(15, 'day').format('YYYY-MM-DD'),
     status: 'in_stock',
     usedQuantity: 0,
-    lockedQuantity: 0
+    lockedQuantity: 0,
+    adjustedQuantity: 0
   },
   {
     id: 'impl_004',
@@ -56,7 +59,8 @@ export const mockImplants: ImplantInfo[] = [
     inboundDate: dayjs().subtract(100, 'day').format('YYYY-MM-DD'),
     status: 'in_stock',
     usedQuantity: 0,
-    lockedQuantity: 0
+    lockedQuantity: 0,
+    adjustedQuantity: 2
   },
   {
     id: 'impl_005',
@@ -70,7 +74,8 @@ export const mockImplants: ImplantInfo[] = [
     inboundDate: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
     status: 'locked',
     usedQuantity: 3,
-    lockedQuantity: 1
+    lockedQuantity: 1,
+    adjustedQuantity: 0
   },
   {
     id: 'impl_006',
@@ -84,7 +89,8 @@ export const mockImplants: ImplantInfo[] = [
     inboundDate: dayjs().subtract(20, 'day').format('YYYY-MM-DD'),
     status: 'in_stock',
     usedQuantity: 2,
-    lockedQuantity: 0
+    lockedQuantity: 0,
+    adjustedQuantity: 0
   }
 ];
 
@@ -158,6 +164,20 @@ export const mockUsageRecords: UsageRecord[] = [
     quantity: 3,
     operator: '王护士',
     usedAt: dayjs().subtract(1, 'day').format('YYYY-MM-DD HH:mm')
+  },
+  {
+    id: 'use_006',
+    implantId: 'impl_006',
+    batchNo: 'STM2024001',
+    brand: 'Straumann',
+    spec: 'SLActive 4.1x12mm',
+    doctor: '张医生',
+    patientInitial: '钱',
+    patientId: 'HL2024008',
+    surgeryDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+    quantity: 2,
+    operator: '李护士',
+    usedAt: dayjs().format('YYYY-MM-DD HH:mm')
   }
 ];
 
@@ -171,7 +191,7 @@ export const mockLockRecords: LockRecord[] = [
     doctor: '张医生',
     patientInitial: '周',
     patientId: 'HL2024006',
-    surgeryDate: dayjs().add(2, 'day').format('YYYY-MM-DD'),
+    surgeryDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
     quantity: 2,
     operator: '李护士',
     lockedAt: dayjs().subtract(1, 'day').format('YYYY-MM-DD HH:mm'),
@@ -186,10 +206,82 @@ export const mockLockRecords: LockRecord[] = [
     doctor: '王医生',
     patientInitial: '吴',
     patientId: 'HL2024007',
-    surgeryDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
+    surgeryDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
     quantity: 1,
     operator: '张护士',
     lockedAt: dayjs().subtract(6, 'hour').format('YYYY-MM-DD HH:mm'),
     status: 'locked'
+  },
+  {
+    id: 'lock_003',
+    implantId: 'impl_003',
+    batchNo: 'DTM2024008',
+    brand: 'Dentium',
+    spec: 'SuperLine 4.0x10mm',
+    doctor: '李医生',
+    patientInitial: '郑',
+    patientId: 'HL2024009',
+    surgeryDate: dayjs().add(2, 'day').format('YYYY-MM-DD'),
+    quantity: 3,
+    operator: '王护士',
+    lockedAt: dayjs().format('YYYY-MM-DD HH:mm'),
+    status: 'used'
+  },
+  {
+    id: 'lock_004',
+    implantId: '',
+    batchNo: 'NBL2024015',
+    brand: 'Nobel',
+    spec: 'Active 4.3x11.5mm',
+    doctor: '王医生',
+    patientInitial: '冯',
+    patientId: 'HL2024010',
+    surgeryDate: dayjs().add(1, 'day').format('YYYY-MM-DD'),
+    quantity: 4,
+    operator: '张护士',
+    lockedAt: dayjs().subtract(2, 'hour').format('YYYY-MM-DD HH:mm'),
+    status: 'locked'
+  },
+  {
+    id: 'lock_005',
+    implantId: '',
+    batchNo: 'OST2024023',
+    brand: 'Osstem',
+    spec: 'TS III 4.5x10mm',
+    doctor: '张医生',
+    patientInitial: '韩',
+    patientId: 'HL2024011',
+    surgeryDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
+    quantity: 2,
+    operator: '李护士',
+    lockedAt: dayjs().format('YYYY-MM-DD HH:mm'),
+    status: 'locked'
+  }
+];
+
+export const mockAdjustmentRecords: AdjustmentRecord[] = [
+  {
+    id: 'adj_001',
+    implantId: 'impl_002',
+    batchNo: 'NBL2024015',
+    brand: 'Nobel',
+    spec: 'Active 4.3x11.5mm',
+    type: 'damage',
+    quantity: 1,
+    reason: '包装破损，无法使用',
+    operator: '库房管理员',
+    adjustedAt: dayjs().subtract(5, 'day').format('YYYY-MM-DD HH:mm')
+  },
+  {
+    id: 'adj_002',
+    implantId: 'impl_004',
+    batchNo: 'OST2024023',
+    brand: 'Osstem',
+    spec: 'TS III 4.5x10mm',
+    type: 'return',
+    quantity: 2,
+    reason: '供应商换货退货',
+    operator: '库房管理员',
+    adjustedAt: dayjs().subtract(2, 'day').format('YYYY-MM-DD HH:mm')
   }
 ];

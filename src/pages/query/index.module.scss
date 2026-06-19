@@ -174,7 +174,7 @@
 
 .stockGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: $spacing-md;
   margin-bottom: $spacing-lg;
 }
@@ -205,6 +205,10 @@
 
   &.total {
     color: $color-primary;
+  }
+
+  &.adjusted {
+    color: $color-error;
   }
 }
 
@@ -389,6 +393,15 @@
   font-size: $font-size-sm;
   color: $color-primary;
   line-height: 1.6;
+}
+
+.adjustTypeTag {
+  padding: $spacing-xs $spacing-md;
+  background: $color-tag-error-bg;
+  color: $color-error;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
 }
 
 .alertBanner {

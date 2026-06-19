@@ -1,0 +1,532 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+  padding-bottom: $spacing-xl;
+}
+
+.header {
+  padding: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.headerTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xs;
+}
+
+.headerSubtitle {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.formSection {
+  padding: $spacing-lg $page-padding 0;
+}
+
+.recordsSection {
+  padding: $spacing-lg $page-padding 0;
+}
+
+.sectionTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.formCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.formItem {
+  margin-bottom: $spacing-lg;
+
+  &:last-of-type {
+    margin-bottom: $spacing-md;
+  }
+}
+
+.formLabel {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.required {
+  color: $color-error;
+  margin-right: $spacing-xs;
+}
+
+.quantityHint {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-normal;
+  color: $color-text-tertiary;
+  margin-left: $spacing-xs;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-bg-input;
+  border-radius: $radius-button;
+  padding: 0 $spacing-lg;
+  height: 88rpx;
+}
+
+.searchIcon {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  height: 100%;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.clearButton {
+  @include button-reset;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  background: $color-text-disabled;
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.searchResults {
+  margin-top: $spacing-sm;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  max-height: 500rpx;
+  overflow: hidden;
+  border: 2rpx solid $color-divider;
+}
+
+.searchResultItem {
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 2rpx solid $color-divider;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.resultMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.resultBatchNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  display: block;
+}
+
+.resultInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.resultStock {
+  font-size: $font-size-sm;
+  color: $color-success;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.resultArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+  margin-left: $spacing-md;
+}
+
+.noResults {
+  text-align: center;
+  padding: $spacing-lg;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.batchInfoCard {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.batchInfoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 2rpx solid $color-divider;
+}
+
+.batchInfoMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.brandText {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.specText {
+  display: block;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.batchNoTag {
+  background: $color-tag-info-bg;
+  color: $color-primary;
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+  margin-left: $spacing-md;
+}
+
+.batchInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+}
+
+.infoTile {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.infoTileValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-success;
+  margin-bottom: $spacing-xs;
+}
+
+.infoTileLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.pickerBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: 0 $spacing-lg;
+  height: 88rpx;
+}
+
+.pickerArrow {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+}
+
+.typeTag {
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+
+  &.loss {
+    background: #FFECE8;
+    color: $color-error;
+  }
+
+  &.damage {
+    background: #FFF7E8;
+    color: $color-warning;
+  }
+
+  &.return {
+    background: $color-tag-info-bg;
+    color: $color-primary;
+  }
+
+  &.other {
+    background: $color-tag-success-bg;
+    color: $color-success;
+  }
+}
+
+.inputBox {
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: 0 $spacing-lg;
+  height: 88rpx;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.textareaBox {
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
+  width: 100%;
+  height: 200rpx;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.charCount {
+  display: block;
+  text-align: right;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.confirmButton {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-lg;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    background: $color-text-disabled;
+    color: $color-text-white;
+  }
+}
+
+.filterCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.filterItem {
+  flex-shrink: 0;
+}
+
+.filterPicker {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  height: 72rpx;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.filterSearch {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  height: 72rpx;
+}
+
+.filterInput {
+  flex: 1;
+  height: 100%;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.recordList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.recordCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.recordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.recordQuantity {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-error;
+}
+
+.recordProductRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.recordBrandSpec {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.recordBatchNo {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  background: $color-tag-info-bg;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-xs;
+}
+
+.recordReason {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+  margin-bottom: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+}
+
+.recordFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $spacing-md;
+  border-top: 2rpx solid $color-divider;
+}
+
+.recordOperator {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.recordTime {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xl 0;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+.emptyIcon {
+  display: block;
+  font-size: 120rpx;
+  opacity: 0.3;
+  margin-bottom: $spacing-md;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.expiryTag {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  display: block;
+  text-align: center;
+  margin-bottom: $spacing-xs;
+
+  &.normal {
+    background: $color-tag-success-bg;
+    color: $color-success;
+  }
+
+  &.warning {
+    background: $color-tag-warning-bg;
+    color: $color-warning;
+  }
+
+  &.expired {
+    background: $color-tag-error-bg;
+    color: $color-error;
+  }
+}

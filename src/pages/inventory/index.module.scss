@@ -1,0 +1,668 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollWrap {
+  flex: 1;
+  height: 0;
+}
+
+.header {
+  padding: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.headerTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xs;
+}
+
+.headerSubtitle {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.filterSection {
+  padding: $spacing-lg $page-padding;
+  background: $color-bg-card;
+  border-bottom: 2rpx solid $color-divider;
+}
+
+.dateRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.dateItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.dateLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.datePicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  height: 80rpx;
+}
+
+.dateValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.datePickerIcon {
+  font-size: $font-size-lg;
+  opacity: 0.6;
+}
+
+.dateSeparator {
+  color: $color-text-tertiary;
+  font-size: $font-size-lg;
+  padding-bottom: $spacing-lg;
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+}
+
+.summaryWrap {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.summaryCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg $spacing-md;
+  box-shadow: $shadow-card;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.summaryValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.2;
+}
+
+.summaryLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.colorOpening {
+  color: $color-primary;
+}
+
+.colorInbound {
+  color: $color-success;
+}
+
+.colorUsed {
+  color: $color-text-secondary;
+}
+
+.colorLocked {
+  color: $color-warning;
+}
+
+.colorAdjusted {
+  color: #9254de;
+}
+
+.colorClosing {
+  color: $color-primary-dark;
+}
+
+.colorAvailable {
+  color: $color-success;
+}
+
+.colorDifference {
+  color: $color-error;
+}
+
+.listCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+}
+
+.listCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 2rpx solid $color-divider;
+}
+
+.listCardTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.listCardCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.tableScrollX {
+  width: 100%;
+}
+
+.tableWrap {
+  min-width: 1200rpx;
+}
+
+.tableHeader {
+  display: flex;
+  background: $color-bg-hover;
+  padding: $spacing-md 0;
+  padding-right: 60rpx;
+}
+
+.th {
+  flex: 1;
+  padding: 0 $spacing-xs;
+  text-align: center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.tableBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.rowWrap {
+  border-bottom: 2rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.tableRow {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md 0;
+  padding-right: 60rpx;
+  position: relative;
+  transition: background-color $transition-fast;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+
+  &.rowExpanded {
+    background: $color-tag-info-bg;
+  }
+}
+
+.td {
+  flex: 1;
+  padding: 0 $spacing-xs;
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.brandText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.specText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: 4rpx;
+}
+
+.batchCell {
+  text-align: left;
+  align-items: flex-start;
+}
+
+.batchText {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+  text-align: left;
+}
+
+.expandIcon {
+  position: absolute;
+  right: $spacing-md;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  transition: transform $transition-base;
+
+  &.expandIconRotated {
+    transform: translateY(-50%) rotate(90deg);
+    color: $color-primary;
+  }
+}
+
+.detailPanel {
+  background: $color-bg-page;
+  padding: $spacing-md;
+  border-top: 2rpx solid $color-divider;
+}
+
+.loadingTip {
+  text-align: center;
+  padding: $spacing-xl 0;
+  color: $color-text-tertiary;
+  font-size: $font-size-md;
+}
+
+.detailSection {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.detailSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 2rpx solid $color-divider;
+}
+
+.detailSectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.detailSectionCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.inboundList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.inboundCard {
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+
+  &:active {
+    background: $color-bg-input;
+  }
+}
+
+.inboundHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-sm;
+}
+
+.inboundMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.inboundDate {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.inboundSupplier {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.inboundArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+}
+
+.inboundStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-xs;
+}
+
+.inboundStat {
+  text-align: center;
+  padding: $spacing-xs 0;
+  background: $color-bg-card;
+  border-radius: $radius-xs;
+}
+
+.inboundStatValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.inboundStatLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.recordList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.recordItem {
+  background: $color-bg-hover;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+}
+
+.recordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.recordDoctor {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.recordQuantity {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.recordInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xs;
+}
+
+.recordTag {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: $font-size-xs;
+
+  .label {
+    color: $color-text-tertiary;
+  }
+
+  .value {
+    color: $color-text-primary;
+  }
+}
+
+.recordTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.emptyTip {
+  text-align: center;
+  padding: $spacing-lg 0;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.jumpBtn {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  text-align: center;
+  border: 2rpx dashed $color-primary;
+
+  &:active {
+    background: $color-tag-info-bg;
+  }
+}
+
+.jumpBtnText {
+  font-size: $font-size-md;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xl $spacing-lg;
+}
+
+.emptyIcon {
+  font-size: 100rpx;
+  opacity: 0.4;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.bottomPadding {
+  height: 200rpx;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.exportBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.exportBtnIcon {
+  font-size: $font-size-lg;
+}
+
+.exportBtnText {
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.modalMask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: $spacing-xl;
+}
+
+.modalBox {
+  width: 100%;
+  max-width: 680rpx;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 2rpx solid $color-divider;
+}
+
+.modalTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.modalClose {
+  font-size: 48rpx;
+  color: $color-text-tertiary;
+  line-height: 1;
+  padding: $spacing-xs;
+}
+
+.modalBody {
+  padding: $spacing-lg;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.modalTip {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.previewWrap {
+  flex: 1;
+  max-height: 400rpx;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.previewText {
+  font-size: 22rpx;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: 'Courier New', monospace;
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  border-top: 2rpx solid $color-divider;
+}
+
+.modalBtnSecondary {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  background: $color-bg-hover;
+  color: $color-text-primary;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    background: $color-bg-input;
+  }
+}
+
+.modalBtnPrimary {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+  }
+}

@@ -2,7 +2,9 @@ export default defineAppConfig({
   pages: [
     'pages/inbound/index',
     'pages/outbound/index',
-    'pages/query/index'
+    'pages/query/index',
+    'pages/inventory/index',
+    'pages/adjustment/index'
   ],
   window: {
     backgroundTextStyle: 'light',
@@ -23,11 +25,19 @@ export default defineAppConfig({
       },
       {
         pagePath: 'pages/outbound/index',
-        text: '椅旁领用'
+        text: '术前备货'
       },
       {
         pagePath: 'pages/query/index',
         text: '批号查询'
+      },
+      {
+        pagePath: 'pages/inventory/index',
+        text: '月底盘点'
+      },
+      {
+        pagePath: 'pages/adjustment/index',
+        text: '库存调整'
       }
     ]
   }
