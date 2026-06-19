@@ -162,6 +162,8 @@ const QueryPage: React.FC = () => {
   const renderStockInfo = (stock: {
     totalQuantity: number;
     usedQuantity: number;
+    usedCaseCount?: number;
+    usedQuantityFromRecords?: number;
     lockedQuantity: number;
     adjustedQuantity: number;
     availableQuantity: number;
@@ -562,6 +564,34 @@ const QueryPage: React.FC = () => {
               </View>
 
               {renderStockInfo(batchSummary.totalStock)}
+
+              <View className={styles.caseCheckSection}>
+                <View className={styles.sectionHeader}>
+                  <Text className={styles.sectionTitle}>病例使用核对</Text>
+                </View>
+                <View className={styles.caseCheckGrid}>
+                  <View className={styles.caseCheckItem}>
+                    <Text className={styles.caseCheckLabel}>病例条数</Text>
+                    <Text className={styles.caseCheckValue}>{batchSummary.totalStock.usedCaseCount} 例</Text>
+                  </View>
+                  <View className={styles.caseCheckItem}>
+                    <Text className={styles.caseCheckLabel}>各病例数量加总</Text>
+                    <Text className={styles.caseCheckValue}>{batchSummary.totalStock.usedQuantityFromRecords} 支</Text>
+                  </View>
+                  <View className={styles.caseCheckItem}>
+                    <Text className={styles.caseCheckLabel}>系统登记已使用</Text>
+                    <Text className={styles.caseCheckValue}>{batchSummary.totalStock.usedQuantity} 支</Text>
+                  </View>
+                </View>
+                <View className={styles.checkResultRow}>
+                  <Text className={styles.checkResultLabel}>核对结果</Text>
+                  {batchSummary.totalStock.usedQuantityFromRecords === batchSummary.totalStock.usedQuantity ? (
+                    <Text className={classnames(styles.checkResult, styles.checkSuccess)}>✓ 核对一致</Text>
+                  ) : (
+                    <Text className={classnames(styles.checkResult, styles.checkWarning)}>⚠ 存在差异，请核对</Text>
+                  )}
+                </View>
+              </View>
 
               <View className={styles.infoSection}>
                 <View className={styles.infoRow}>

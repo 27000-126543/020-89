@@ -87,6 +87,8 @@ export interface BatchSummary {
   totalStock: {
     totalQuantity: number;
     usedQuantity: number;
+    usedCaseCount: number;
+    usedQuantityFromRecords: number;
     lockedQuantity: number;
     adjustedQuantity: number;
     availableQuantity: number;

@@ -56,7 +56,7 @@ interface ImplantState {
   getAdjustmentRecordsByImplant: (implantId: string) => AdjustmentRecord[];
 
   getInventoryGroups: (startDate?: string, endDate?: string) => InventoryGroup[];
-  getInventoryDetail: (implantId: string) => InventoryDetail | null;
+  getInventoryDetail: (implantId: string, startDate?: string, endDate?: string) => InventoryDetail | null;
   exportInventory: (groups: InventoryGroup[]) => string;
 
   getSurgeryStockpiles: (dateRange: 'today' | 'tomorrow' | 'week', doctor?: string) => SurgeryStockpile[];
@@ -365,9 +365,12 @@ export const useImplantStore = create<ImplantState>()(
         const adjustments = adjustmentRecords.filter((r) => r.batchNo === batchNo);
 
         const totalQuantity = matchingImplants.reduce((sum, i) => sum + i.quantity, 0);
-        const usedQuantity = matchingImplants.reduce((sum, i) => sum + i.usedQuantity, 0);
-        const lockedQuantity = matchingImplants.reduce((sum, i) => sum + i.lockedQuantity, 0);
-        const adjustedQuantity = matchingImplants.reduce((sum, i) => sum + i.adjustedQuantity, 0);
+        const usedQuantityFromImplants = matchingImplants.reduce((sum, i) => sum + i.usedQuantity, 0);
+        const usedQuantityFromRecords = records.reduce((sum, r) => sum + r.quantity, 0);
+        const usedQuantity = Math.max(usedQuantityFromImplants, usedQuantityFromRecords);
+        const usedCaseCount = records.length;
+        const lockedQuantity = locks.reduce((sum, r) => sum + r.quantity, 0);
+        const adjustedQuantity = adjustments.reduce((sum, r) => sum + r.quantity, 0);
 
         const uniqueSpecs = [...new Set(matchingImplants.map((i) => i.spec))];
         const uniqueSuppliers = [...new Set(matchingImplants.map((i) => i.supplier))];
@@ -381,6 +384,8 @@ export const useImplantStore = create<ImplantState>()(
           totalStock: {
             totalQuantity,
             usedQuantity,
+            usedCaseCount,
+            usedQuantityFromRecords,
             lockedQuantity,
             adjustedQuantity,
             availableQuantity: totalQuantity - usedQuantity - lockedQuantity - adjustedQuantity
@@ -567,9 +572,10 @@ export const useImplantStore = create<ImplantState>()(
       getInventoryGroups: (startDate, endDate) => {
         const { implants, usageRecords, lockRecords, adjustmentRecords } = get();
         const groups: Map<string, InventoryGroup> = new Map();
+        const hasDateRange = startDate && endDate;
 
         implants.forEach((implant) => {
-          const inRange = !startDate || !endDate || (implant.inboundDate >= startDate && implant.inboundDate <= endDate);
+          const inRange = !hasDateRange || (implant.inboundDate >= startDate && implant.inboundDate <= endDate);
           const key = `${implant.brand}||${implant.spec}||${implant.batchNo}`;
 
           if (!groups.has(key)) {
@@ -602,13 +608,31 @@ export const useImplantStore = create<ImplantState>()(
 
         groups.forEach((group, key) => {
           const matchingUsages = usageRecords.filter(
-            (r) => r.batchNo === group.batchNo && r.brand === group.brand && r.spec === group.spec
+            (r) => {
+              const matchKey = r.batchNo === group.batchNo && r.brand === group.brand && r.spec === group.spec;
+              if (!matchKey) return false;
+              if (!hasDateRange) return true;
+              const usedDate = r.usedAt.split(' ')[0];
+              return usedDate >= startDate && usedDate <= endDate;
+            }
           );
           const matchingLocks = lockRecords.filter(
-            (r) => r.status === 'locked' && r.batchNo === group.batchNo && r.brand === group.brand && r.spec === group.spec
+            (r) => {
+              const matchKey = r.status === 'locked' && r.batchNo === group.batchNo && r.brand === group.brand && r.spec === group.spec;
+              if (!matchKey) return false;
+              if (!hasDateRange) return true;
+              const lockedDate = r.lockedAt.split(' ')[0];
+              return lockedDate >= startDate && lockedDate <= endDate;
+            }
           );
           const matchingAdjustments = adjustmentRecords.filter(
-            (r) => r.batchNo === group.batchNo && r.brand === group.brand && r.spec === group.spec
+            (r) => {
+              const matchKey = r.batchNo === group.batchNo && r.brand === group.brand && r.spec === group.spec;
+              if (!matchKey) return false;
+              if (!hasDateRange) return true;
+              const adjustedDate = r.adjustedAt.split(' ')[0];
+              return adjustedDate >= startDate && adjustedDate <= endDate;
+            }
           );
 
           group.usedQuantity = matchingUsages.reduce((sum, r) => sum + r.quantity, 0);
@@ -629,14 +653,30 @@ export const useImplantStore = create<ImplantState>()(
         });
       },
 
-      getInventoryDetail: (implantId) => {
+      getInventoryDetail: (implantId, startDate, endDate) => {
         const { implants, usageRecords, lockRecords, adjustmentRecords } = get();
         const implant = implants.find((i) => i.id === implantId);
         if (!implant) return null;
+        const hasDateRange = startDate && endDate;
 
-        const usages = usageRecords.filter((r) => r.implantId === implantId);
-        const locks = lockRecords.filter((r) => r.implantId === implantId);
-        const adjustments = adjustmentRecords.filter((r) => r.implantId === implantId);
+        const usages = usageRecords.filter((r) => {
+          if (r.implantId !== implantId) return false;
+          if (!hasDateRange) return true;
+          const usedDate = r.usedAt.split(' ')[0];
+          return usedDate >= startDate && usedDate <= endDate;
+        });
+        const locks = lockRecords.filter((r) => {
+          if (r.implantId !== implantId) return false;
+          if (!hasDateRange) return true;
+          const lockedDate = r.lockedAt.split(' ')[0];
+          return lockedDate >= startDate && lockedDate <= endDate;
+        });
+        const adjustments = adjustmentRecords.filter((r) => {
+          if (r.implantId !== implantId) return false;
+          if (!hasDateRange) return true;
+          const adjustedDate = r.adjustedAt.split(' ')[0];
+          return adjustedDate >= startDate && adjustedDate <= endDate;
+        });
 
         return {
           implantId,
@@ -644,9 +684,9 @@ export const useImplantStore = create<ImplantState>()(
           expiryDate: implant.expiryDate,
           supplier: implant.supplier,
           totalQuantity: implant.quantity,
-          usedQuantity: implant.usedQuantity,
-          lockedQuantity: implant.lockedQuantity,
-          adjustedQuantity: implant.adjustedQuantity,
+          usedQuantity: usages.reduce((sum, r) => sum + r.quantity, 0),
+          lockedQuantity: locks.reduce((sum, r) => sum + r.quantity, 0),
+          adjustedQuantity: adjustments.reduce((sum, r) => sum + r.quantity, 0),
           availableQuantity: implant.quantity - implant.usedQuantity - implant.lockedQuantity - implant.adjustedQuantity,
           usageRecords: usages,
           lockRecords: locks,
@@ -710,7 +750,7 @@ export const useImplantStore = create<ImplantState>()(
         const activeLocks = lockRecords.filter((r) => {
           if (!dateSet.has(r.surgeryDate)) return false;
           if (doctor && r.doctor !== doctor) return false;
-          return r.status !== 'cancelled';
+          return r.status === 'locked';
         });
 
         const stockpileMap = new Map<string, SurgeryStockpile>();

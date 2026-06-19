@@ -94,12 +94,36 @@ const InboundPage: React.FC = () => {
       return;
     }
 
-    const pendingBatchNos = pendingItems.map((item) => item.batchNo);
-    if (pendingBatchNos.includes(formData.batchNo)) {
-      Taro.showToast({ title: '该批号已在待上架清单中', icon: 'none' });
-      return;
+    const hasDuplicatePending = pendingItems.some((item) => item.batchNo === formData.batchNo);
+    if (hasDuplicatePending) {
+      Taro.showModal({
+        title: '批号已在待上架中',
+        content: `该批号「${formData.batchNo}」已在待上架清单中，是否确认继续添加？`,
+        confirmText: '继续添加',
+        success: (res) => {
+          if (!res.confirm) return;
+          doAddToPending();
+        }
+      });
+    } else {
+      const hasDuplicateInStock = existingBatchNos.includes(formData.batchNo);
+      if (hasDuplicateInStock) {
+        Taro.showModal({
+          title: '批号核对提醒',
+          content: `该批号「${formData.batchNo}」历史已入库，建议核对规格、供应商是否一致。是否继续添加？`,
+          confirmText: '继续添加',
+          success: (res) => {
+            if (!res.confirm) return;
+            doAddToPending();
+          }
+        });
+      } else {
+        doAddToPending();
+      }
     }
+  };
 
+  const doAddToPending = () => {
     addPendingItem({
       barcode: formData.barcode,
       brand: formData.brand,

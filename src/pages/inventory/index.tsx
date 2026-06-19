@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Button, ScrollView, Picker } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
@@ -23,6 +23,11 @@ const InventoryPage: React.FC = () => {
   const { getInventoryGroups, exportInventory, getInventoryDetail } = useImplantStore();
 
   const groups = useMemo(() => getInventoryGroups(startDate, endDate), [getInventoryGroups, startDate, endDate]);
+
+  useEffect(() => {
+    setDetailMap({});
+    setExpandedKey(null);
+  }, [startDate, endDate]);
 
   const summary = useMemo(() => {
     return groups.reduce(
@@ -67,7 +72,7 @@ const InventoryPage: React.FC = () => {
       setLoadingDetail(group.key);
       const newDetailMap: DetailMap = { ...detailMap };
       missingIds.forEach((id) => {
-        newDetailMap[id] = getInventoryDetail(id);
+        newDetailMap[id] = getInventoryDetail(id, startDate, endDate);
       });
       setDetailMap(newDetailMap);
       setLoadingDetail(null);
