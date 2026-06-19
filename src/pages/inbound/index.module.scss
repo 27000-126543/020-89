@@ -1,0 +1,319 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+  padding-bottom: 160rpx;
+}
+
+.header {
+  padding: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.headerTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xs;
+}
+
+.headerSubtitle {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.formSection {
+  margin: $spacing-lg $page-padding;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.formItem {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.formLabel {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.formInput {
+  height: 88rpx;
+  background: $color-bg-input;
+  border-radius: $radius-md;
+  padding: 0 $spacing-lg;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &:focus {
+    border-color: $color-primary;
+    background: $color-bg-card;
+  }
+}
+
+.formRow {
+  display: flex;
+  gap: $spacing-md;
+
+  .formItem {
+    flex: 1;
+  }
+}
+
+.warningsContainer {
+  margin: 0 $page-padding $spacing-lg;
+}
+
+.warningCard {
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  &.error {
+    background: $color-tag-error-bg;
+    color: $color-error;
+  }
+
+  &.warning {
+    background: $color-tag-warning-bg;
+    color: $color-warning;
+  }
+}
+
+.warningIcon {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+}
+
+.warningText {
+  font-size: $font-size-sm;
+  flex: 1;
+}
+
+.addButton {
+  @include button-reset;
+  margin: 0 $page-padding $spacing-xl;
+  width: calc(100% - #{$page-padding * 2});
+  height: $button-height-md;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    background: $color-text-disabled;
+  }
+}
+
+.pendingSection {
+  margin: 0 $page-padding;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.badge {
+  background: $color-primary;
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  padding: 4rpx $spacing-md;
+  border-radius: $radius-round;
+}
+
+.pendingList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.pendingItem {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  position: relative;
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.itemBrand {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.itemSpec {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+}
+
+.deleteBtn {
+  @include button-reset;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: $radius-round;
+  background: $color-tag-error-bg;
+  color: $color-error;
+  font-size: $font-size-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.itemInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.infoTag {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  background: $color-bg-hover;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+
+  .highlight {
+    color: $color-text-primary;
+    font-weight: $font-weight-medium;
+    margin-left: $spacing-xs;
+  }
+
+  &.expiryWarning {
+    background: $color-tag-warning-bg;
+    color: $color-warning;
+
+    .highlight {
+      color: $color-warning;
+    }
+  }
+
+  &.expiryError {
+    background: $color-tag-error-bg;
+    color: $color-error;
+
+    .highlight {
+      color: $color-error;
+    }
+  }
+}
+
+.itemWarnings {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 2rpx solid $color-divider;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.itemWarning {
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+
+  &.error {
+    background: $color-tag-error-bg;
+    color: $color-error;
+  }
+
+  &.warning {
+    background: $color-tag-warning-bg;
+    color: $color-warning;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xl 0;
+  color: $color-text-tertiary;
+  font-size: $font-size-md;
+}
+
+.footerBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: $shadow-float;
+  display: flex;
+  gap: $spacing-md;
+}
+
+.confirmButton {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    background: $color-text-disabled;
+  }
+}
+
+.scanButton {
+  @include button-reset;
+  width: 120rpx;
+  height: $button-height-lg;
+  background: $color-bg-hover;
+  color: $color-primary;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+}
+
+.scanIcon {
+  font-size: $font-size-xl;
+}

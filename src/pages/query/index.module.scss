@@ -1,0 +1,392 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+}
+
+.header {
+  padding: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.headerTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xs;
+}
+
+.headerSubtitle {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.searchSection {
+  padding: $spacing-lg $page-padding;
+  background: $color-bg-card;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  background: $color-bg-input;
+  border-radius: $radius-button;
+  padding: 0 $spacing-lg;
+  height: 88rpx;
+}
+
+.searchIcon {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+}
+
+.searchInput {
+  flex: 1;
+  height: 100%;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.searchButton {
+  @include button-reset;
+  height: 72rpx;
+  padding: 0 $spacing-lg;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    background: $color-text-disabled;
+  }
+}
+
+.clearButton {
+  @include button-reset;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  background: $color-text-disabled;
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchResults {
+  margin: $spacing-sm $page-padding 0;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  max-height: 500rpx;
+  overflow: hidden;
+}
+
+.searchResultItem {
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 2rpx solid $color-divider;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.resultBatchNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.resultInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+}
+
+.resultArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+}
+
+.detailCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.productHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  border-bottom: 2rpx solid $color-divider;
+}
+
+.productInfo {
+  flex: 1;
+}
+
+.productBrand {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.productSpec {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.batchNoTag {
+  background: $color-tag-info-bg;
+  color: $color-primary;
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+}
+
+.stockGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.stockItem {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  text-align: center;
+}
+
+.stockValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-xs;
+
+  &.available {
+    color: $color-success;
+  }
+
+  &.used {
+    color: $color-text-secondary;
+  }
+
+  &.locked {
+    color: $color-warning;
+  }
+
+  &.total {
+    color: $color-primary;
+  }
+}
+
+.stockLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.infoSection {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 2rpx solid $color-divider;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.infoLabel {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.infoValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.expiryTag {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+
+  &.normal {
+    background: $color-tag-success-bg;
+    color: $color-success;
+  }
+
+  &.warning {
+    background: $color-tag-warning-bg;
+    color: $color-warning;
+  }
+
+  &.expired {
+    background: $color-tag-error-bg;
+    color: $color-error;
+  }
+}
+
+.recordsSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.recordList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.recordItem {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
+}
+
+.recordHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.recordDoctor {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.recordQuantity {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+}
+
+.recordInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.recordTag {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  .label {
+    color: $color-text-tertiary;
+  }
+
+  .value {
+    color: $color-text-primary;
+  }
+}
+
+.recordTime {
+  margin-top: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xl 0;
+  color: $color-text-tertiary;
+  font-size: $font-size-md;
+}
+
+.searchEmpty {
+  text-align: center;
+  padding: $spacing-xl 0;
+}
+
+.searchEmptyIcon {
+  font-size: 120rpx;
+  opacity: 0.3;
+  margin-bottom: $spacing-md;
+}
+
+.searchEmptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.noResults {
+  text-align: center;
+  padding: $spacing-lg;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.hintSection {
+  margin: 0 $page-padding $spacing-lg;
+  padding: $spacing-md $spacing-lg;
+  background: $color-tag-info-bg;
+  border-radius: $radius-md;
+}
+
+.hintText {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  line-height: 1.6;
+}
