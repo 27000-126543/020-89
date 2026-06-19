@@ -403,3 +403,165 @@
   color: $color-text-tertiary;
   margin-top: $spacing-xs;
 }
+
+.tabs {
+  display: flex;
+  position: relative;
+  background: $color-bg-card;
+  margin: $spacing-md $page-padding;
+  border-radius: $radius-lg;
+  padding: $spacing-xs;
+  box-shadow: $shadow-card;
+}
+
+.tab {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all $transition-base;
+  z-index: 1;
+  gap: $spacing-xs;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.tabText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+}
+
+.activeTab .tabText {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.tabBadge {
+  min-width: 36rpx;
+  height: 36rpx;
+  background: $color-error;
+  color: $color-text-white;
+  font-size: $font-size-xs;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 $spacing-xs;
+}
+
+.tabIndicator {
+  position: absolute;
+  top: $spacing-xs;
+  bottom: $spacing-xs;
+  width: 50%;
+  background: $color-tag-info-bg;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+  z-index: 0;
+}
+
+.confirmSection {
+  margin: 0 $page-padding;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.lockList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.lockItem {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  border-left: 8rpx solid $color-warning;
+}
+
+.lockHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-sm;
+}
+
+.lockProduct {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.lockBatch {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.lockStatus {
+  background: $color-tag-warning-bg;
+  color: $color-warning;
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+}
+
+.lockInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.lockStock {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 2rpx solid $color-divider;
+}
+
+.lockActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.cancelBtn {
+  background: $color-bg-hover;
+  color: $color-text-secondary;
+}
+
+.confirmBtn {
+  background: $color-primary;
+  color: $color-text-white;
+}

@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import styles from './index.module.scss';
 import { useImplantStore } from '@/store/implantStore';
 import { validateImplantForm, daysUntilExpiry } from '@/utils/validator';
-import type { ValidationWarning } from '@/types/implant';
+import type { ValidationWarning, AlertSummary, AlertItem } from '@/types/implant';
 import { SUPPLIERS, BRANDS } from '@/types/implant';
 
 interface FormData {
@@ -33,16 +33,20 @@ const InboundPage: React.FC = () => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [supplierIndex, setSupplierIndex] = useState(0);
   const [brandIndex, setBrandIndex] = useState(0);
+  const [showAlertPanel, setShowAlertPanel] = useState(false);
 
   const {
     pendingItems,
+    implants,
     addPendingItem,
     removePendingItem,
     confirmInbound,
-    getExistingBatchNos
+    getExistingBatchNos,
+    getAlerts
   } = useImplantStore();
 
-  const existingBatchNos = useMemo(() => getExistingBatchNos(), [getExistingBatchNos]);
+  const existingBatchNos = useMemo(() => getExistingBatchNos(), [getExistingBatchNos, implants, pendingItems]);
+  const alerts = useMemo(() => getAlerts(), [getAlerts, implants]);
 
   const warnings = useMemo(() => {
     if (!formData.batchNo || !formData.expiryDate) return [];
@@ -150,11 +154,26 @@ const InboundPage: React.FC = () => {
       content: `确定将 ${pendingItems.length} 项种植体入库吗？`,
       success: (res) => {
         if (res.confirm) {
-          confirmInbound();
-          Taro.showToast({ title: '入库成功', icon: 'success' });
+          const newImplants = confirmInbound();
+          if (newImplants.length > 0) {
+            Taro.showToast({ 
+              title: `入库成功，共${newImplants.length}项`, 
+              icon: 'success' 
+            });
+          }
         }
       }
     });
+  };
+
+  const handleAlertClick = (alert: AlertItem) => {
+    Taro.navigateTo({
+      url: `/pages/query/index?batchNo=${alert.batchNo}&implantId=${alert.implantId}`
+    });
+  };
+
+  const handleViewAllAlerts = () => {
+    setShowAlertPanel(!showAlertPanel);
   };
 
   const getExpiryClass = (expiryDate: string) => {
@@ -168,12 +187,69 @@ const InboundPage: React.FC = () => {
     return level === 'error' ? '!' : '⚠';
   };
 
+  const getAlertIcon = (type: AlertItem['type']) => {
+    switch (type) {
+      case 'expiry_expired': return '🕐';
+      case 'expiry_near': return '⏰';
+      case 'stock_low': return '📦';
+      default: return '⚠';
+    }
+  };
+
   return (
     <ScrollView className={styles.page} scrollY>
       <View className={styles.header}>
         <Text className={styles.headerTitle}>入库登记</Text>
         <Text className={styles.headerSubtitle}>扫描条码或手动录入种植体信息</Text>
       </View>
+
+      {alerts.total > 0 && (
+        <View className={styles.alertBanner} onClick={handleViewAllAlerts}>
+          <View className={styles.alertBannerContent}>
+            <Text className={styles.alertBannerIcon}>⚠</Text>
+            <View className={styles.alertBannerText}>
+              <Text className={styles.alertBannerTitle}>
+                库存提醒 ({alerts.total}项)
+              </Text>
+              <Text className={styles.alertBannerSubtitle}>
+                {alerts.expired > 0 && `过期${alerts.expired}项 `}
+                {alerts.nearExpiry > 0 && `临期${alerts.nearExpiry}项 `}
+                {alerts.lowStock > 0 && `低库存${alerts.lowStock}项`}
+              </Text>
+            </View>
+          </View>
+          <Text className={styles.alertBannerArrow}>
+            {showAlertPanel ? '▲' : '▼'}
+          </Text>
+        </View>
+      )}
+
+      {showAlertPanel && alerts.total > 0 && (
+        <View className={styles.alertPanel}>
+          {alerts.items.slice(0, 5).map((alert) => (
+            <View
+              key={alert.id}
+              className={classnames(styles.alertItem, styles[alert.level])}
+              onClick={() => handleAlertClick(alert)}
+            >
+              <Text className={styles.alertItemIcon}>{getAlertIcon(alert.type)}</Text>
+              <View className={styles.alertItemContent}>
+                <Text className={styles.alertItemTitle}>
+                  {alert.title} · {alert.brand} {alert.spec}
+                </Text>
+                <Text className={styles.alertItemMessage}>{alert.message}</Text>
+                <Text className={styles.alertItemBatch}>批号: {alert.batchNo}</Text>
+              </View>
+              <Text className={styles.alertItemArrow}>›</Text>
+            </View>
+          ))}
+          {alerts.items.length > 5 && (
+            <View className={styles.alertMore}>
+              还有 {alerts.items.length - 5} 项提醒，点击查询页查看全部
+            </View>
+          )}
+        </View>
+      )}
 
       <View className={styles.formSection}>
         <View className={styles.formItem}>

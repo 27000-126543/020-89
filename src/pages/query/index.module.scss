@@ -390,3 +390,249 @@
   color: $color-primary;
   line-height: 1.6;
 }
+
+.alertBanner {
+  margin: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md $spacing-lg;
+  box-shadow: $shadow-card;
+  border-left: 8rpx solid $color-warning;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.alertBannerContent {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex: 1;
+}
+
+.alertBannerIcon {
+  font-size: $font-size-xxl;
+}
+
+.alertBannerText {
+  flex: 1;
+}
+
+.alertBannerTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.alertBannerSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.alertBannerArrow {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-left: $spacing-md;
+}
+
+.alertPanel {
+  margin: 0 $page-padding $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+}
+
+.alertItem {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 2rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+
+  &.error {
+    border-left: 6rpx solid $color-error;
+  }
+
+  &.warning {
+    border-left: 6rpx solid $color-warning;
+  }
+}
+
+.alertItemIcon {
+  font-size: $font-size-xl;
+  margin-top: $spacing-xs;
+}
+
+.alertItemContent {
+  flex: 1;
+}
+
+.alertItemTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  display: block;
+}
+
+.alertItemMessage {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  display: block;
+  line-height: 1.5;
+}
+
+.alertItemBatch {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.alertItemArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  margin-top: $spacing-md;
+}
+
+.viewToggle {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.toggleTab {
+  flex: 1;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.activeToggle {
+  background: $color-primary;
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+}
+
+.summaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  background: $color-tag-info-bg;
+  border-bottom: 2rpx solid $color-divider;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.summaryBtnText {
+  font-size: $font-size-md;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.summaryBtnArrow {
+  font-size: $font-size-lg;
+  color: $color-primary;
+}
+
+.resultInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.resultStock {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  display: block;
+}
+
+.subSectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-top: $spacing-lg;
+  margin-bottom: $spacing-md;
+  padding-top: $spacing-lg;
+  border-top: 2rpx solid $color-divider;
+}
+
+.implantList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.implantMiniCard {
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
+
+  &:active {
+    background: $color-bg-input;
+  }
+}
+
+.implantMiniHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.implantMiniBrand {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.implantMiniArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+}
+
+.implantMiniInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+}
+
+.detailCard {
+  margin-bottom: $spacing-lg;
+}
+

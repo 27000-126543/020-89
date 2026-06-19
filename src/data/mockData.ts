@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import type { ImplantInfo, UsageRecord } from '@/types/implant';
+import type { ImplantInfo, UsageRecord, LockRecord } from '@/types/implant';
 
 export const mockImplants: ImplantInfo[] = [
   {
@@ -12,7 +12,7 @@ export const mockImplants: ImplantInfo[] = [
     supplier: '士卓曼',
     quantity: 20,
     inboundDate: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
-    status: 'in_stock',
+    status: 'locked',
     usedQuantity: 5,
     lockedQuantity: 2
   },
@@ -68,9 +68,23 @@ export const mockImplants: ImplantInfo[] = [
     supplier: '士卓曼',
     quantity: 25,
     inboundDate: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
-    status: 'in_stock',
+    status: 'locked',
     usedQuantity: 3,
     lockedQuantity: 1
+  },
+  {
+    id: 'impl_006',
+    barcode: '6901234567895',
+    brand: 'Straumann',
+    spec: 'SLActive 4.1x12mm',
+    batchNo: 'STM2024001',
+    expiryDate: dayjs().add(300, 'day').format('YYYY-MM-DD'),
+    supplier: '士卓曼',
+    quantity: 15,
+    inboundDate: dayjs().subtract(20, 'day').format('YYYY-MM-DD'),
+    status: 'in_stock',
+    usedQuantity: 2,
+    lockedQuantity: 0
   }
 ];
 
@@ -144,5 +158,38 @@ export const mockUsageRecords: UsageRecord[] = [
     quantity: 3,
     operator: '王护士',
     usedAt: dayjs().subtract(1, 'day').format('YYYY-MM-DD HH:mm')
+  }
+];
+
+export const mockLockRecords: LockRecord[] = [
+  {
+    id: 'lock_001',
+    implantId: 'impl_001',
+    batchNo: 'STM2024001',
+    brand: 'Straumann',
+    spec: 'SLActive 4.1x10mm',
+    doctor: '张医生',
+    patientInitial: '周',
+    patientId: 'HL2024006',
+    surgeryDate: dayjs().add(2, 'day').format('YYYY-MM-DD'),
+    quantity: 2,
+    operator: '李护士',
+    lockedAt: dayjs().subtract(1, 'day').format('YYYY-MM-DD HH:mm'),
+    status: 'locked'
+  },
+  {
+    id: 'lock_002',
+    implantId: 'impl_005',
+    batchNo: 'STM2024001',
+    brand: 'Straumann',
+    spec: 'BLX 3.75x12mm',
+    doctor: '王医生',
+    patientInitial: '吴',
+    patientId: 'HL2024007',
+    surgeryDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
+    quantity: 1,
+    operator: '张护士',
+    lockedAt: dayjs().subtract(6, 'hour').format('YYYY-MM-DD HH:mm'),
+    status: 'locked'
   }
 ];
