@@ -147,6 +147,32 @@
   border-bottom: 2rpx solid $color-divider;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.exportBtn {
+  padding: $spacing-xs $spacing-md;
+  background: linear-gradient(135deg, $color-primary, #4096ff);
+  border-radius: $radius-md;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.exportBtnText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
 .productInfo {
   flex: 1;
 }

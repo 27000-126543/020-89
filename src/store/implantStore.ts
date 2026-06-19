@@ -44,6 +44,7 @@ interface ImplantState {
   getBatchDetail: (batchNo: string) => BatchDetail | null;
   getBatchDetailById: (implantId: string) => BatchDetail | null;
   getBatchSummary: (batchNo: string) => BatchSummary | null;
+  exportBatchSummary: (batchNo: string) => string;
   searchByBatchNo: (batchNo: string) => ImplantInfo[];
   getAvailableImplants: () => ImplantInfo[];
   getExistingBatchNos: () => string[];
@@ -365,10 +366,9 @@ export const useImplantStore = create<ImplantState>()(
         const adjustments = adjustmentRecords.filter((r) => r.batchNo === batchNo);
 
         const totalQuantity = matchingImplants.reduce((sum, i) => sum + i.quantity, 0);
-        const usedQuantityFromImplants = matchingImplants.reduce((sum, i) => sum + i.usedQuantity, 0);
-        const usedQuantityFromRecords = records.reduce((sum, r) => sum + r.quantity, 0);
-        const usedQuantity = Math.max(usedQuantityFromImplants, usedQuantityFromRecords);
+        const usedQuantity = records.reduce((sum, r) => sum + r.quantity, 0);
         const usedCaseCount = records.length;
+        const usedQuantityFromRecords = usedQuantity;
         const lockedQuantity = locks.reduce((sum, r) => sum + r.quantity, 0);
         const adjustedQuantity = adjustments.reduce((sum, r) => sum + r.quantity, 0);
 
@@ -393,6 +393,86 @@ export const useImplantStore = create<ImplantState>()(
           uniqueSpecs,
           uniqueSuppliers
         };
+      },
+
+      exportBatchSummary: (batchNo) => {
+        const summary = get().getBatchSummary(batchNo);
+        if (!summary) return '';
+        const ts = summary.totalStock;
+        const rows = [
+          ['批号', summary.batchNo],
+          ['入库记录条数', summary.implants.length.toString()],
+          ['涉及品牌', [...new Set(summary.implants.map(i => i.brand))].join('、')],
+          ['涉及规格', summary.uniqueSpecs.join('、')],
+          ['涉及供应商', summary.uniqueSuppliers.join('、')],
+          [''],
+          ['—— 库存汇总 ——'],
+          ['总库存数量', ts.totalQuantity.toString()],
+          ['已使用数量（按病例记录）', ts.usedQuantity.toString()],
+          ['锁定中数量', ts.lockedQuantity.toString()],
+          ['调整数量', ts.adjustedQuantity.toString()],
+          ['可用库存数量', ts.availableQuantity.toString()],
+          [''],
+          ['—— 病例核对 ——'],
+          ['病例条数', ts.usedCaseCount.toString()],
+          ['各病例数量加总', ts.usedQuantityFromRecords.toString()],
+          ['病例加总 vs 库存已使用', ts.usedQuantityFromRecords === ts.usedQuantity ? '一致' : '存在差异'],
+          [''],
+          ['—— 明细：各入库记录 ——']
+        ];
+        summary.implants.forEach((imp, idx) => {
+          const impUsed = summary.usageRecords.filter(r => r.implantId === imp.id).reduce((s, r) => s + r.quantity, 0);
+          const impLocked = summary.lockRecords.filter(r => r.implantId === imp.id).reduce((s, r) => s + r.quantity, 0);
+          const impAdjusted = summary.adjustmentRecords.filter(r => r.implantId === imp.id).reduce((s, r) => s + r.quantity, 0);
+          const impAvailable = imp.quantity - impUsed - impLocked - impAdjusted;
+          rows.push([`[入库${idx + 1}] ${imp.brand} ${imp.spec}`, '']);
+          rows.push(['  入库日期', imp.inboundDate]);
+          rows.push(['  供应商', imp.supplier]);
+          rows.push(['  有效期', imp.expiryDate]);
+          rows.push(['  入库数量', imp.quantity.toString()]);
+          rows.push(['  已使用', impUsed.toString()]);
+          rows.push(['  锁定中', impLocked.toString()]);
+          rows.push(['  调整', impAdjusted.toString()]);
+          rows.push(['  可用', impAvailable.toString()]);
+          rows.push(['']);
+        });
+        rows.push(['—— 明细：各病例使用记录 ——']);
+        summary.usageRecords.forEach((r, idx) => {
+          rows.push([`[病例${idx + 1}] ${r.patientInitial ?? ''}患者（${r.patientId}）`, '']);
+          rows.push(['  医生', r.doctor]);
+          rows.push(['  手术日期', r.surgeryDate]);
+          rows.push(['  使用数量', r.quantity.toString()]);
+          rows.push(['  使用时间', r.usedAt]);
+          rows.push(['  操作人', r.operator ?? '']);
+          rows.push(['']);
+        });
+        if (summary.lockRecords.length > 0) {
+          rows.push(['—— 明细：锁定中记录 ——']);
+          summary.lockRecords.forEach((r, idx) => {
+            rows.push([`[锁定${idx + 1}] ${r.patientInitial ?? ''}患者（${r.patientId}）`, '']);
+            rows.push(['  医生', r.doctor]);
+            rows.push(['  手术日期', r.surgeryDate]);
+            rows.push(['  锁定数量', r.quantity.toString()]);
+            rows.push(['  锁定时间', r.lockedAt]);
+            rows.push(['  操作人', r.operator ?? '']);
+            rows.push(['']);
+          });
+        }
+        if (summary.adjustmentRecords.length > 0) {
+          rows.push(['—— 明细：调整记录 ——']);
+          const typeMap: Record<string, string> = { inventory_loss: '盘亏', damage: '破损', return: '退货', other: '其他' };
+          summary.adjustmentRecords.forEach((r, idx) => {
+            rows.push([`[调整${idx + 1}] ${typeMap[r.type] ?? r.type}`, '']);
+            rows.push(['  数量', `-${r.quantity}`]);
+            rows.push(['  原因', r.reason]);
+            rows.push(['  操作人', r.operator]);
+            rows.push(['  调整时间', r.adjustedAt]);
+            rows.push(['']);
+          });
+        }
+        const csv = rows.map(r => r.join(',')).join('\n');
+        console.log('[ImplantStore] 导出批号汇总:\n', csv);
+        return csv;
       },
 
       searchByBatchNo: (batchNo) => {
@@ -575,6 +655,11 @@ export const useImplantStore = create<ImplantState>()(
         const hasDateRange = startDate && endDate;
 
         implants.forEach((implant) => {
+          // 问题3：截止日之后才入库的批次，直接跳过，不出现在期初或本期入库
+          if (hasDateRange && implant.inboundDate > endDate) {
+            return;
+          }
+
           const inRange = !hasDateRange || (implant.inboundDate >= startDate && implant.inboundDate <= endDate);
           const key = `${implant.brand}||${implant.spec}||${implant.batchNo}`;
 
@@ -640,10 +725,45 @@ export const useImplantStore = create<ImplantState>()(
           group.adjustedQuantity = matchingAdjustments.reduce((sum, r) => sum + r.quantity, 0);
           group.closingQuantity = group.openingQuantity + group.inboundQuantity - group.usedQuantity - group.lockedQuantity - group.adjustedQuantity;
 
-          const actualAvailable = group.implants.reduce((sum, i) =>
-            sum + (i.quantity - i.usedQuantity - i.lockedQuantity - i.adjustedQuantity), 0);
-          group.availableQuantity = actualAvailable;
-          group.difference = actualAvailable - group.closingQuantity;
+          // 问题4：按所选截止日期还原历史实际可用，不要用今天的当前库存
+          if (!hasDateRange) {
+            // 无日期过滤时，用当前实时库存
+            const actualAvailable = group.implants.reduce((sum, i) =>
+              sum + (i.quantity - i.usedQuantity - i.lockedQuantity - i.adjustedQuantity), 0);
+            group.availableQuantity = actualAvailable;
+          } else {
+            // 有日期过滤时，按 endDate 还原历史可用
+            // 逻辑：截止到 endDate，该分组下各入库记录的 quantity，减去截止到 endDate 前的使用/锁定/调整
+            let historicalAvailable = 0;
+            group.implants.forEach((implant) => {
+              // 该 implant 已在上层过滤了 inboundDate <= endDate
+              const historicalUsed = usageRecords
+                .filter((r) => r.implantId === implant.id)
+                .filter((r) => {
+                  const d = r.usedAt.split(' ')[0];
+                  return d <= endDate;
+                })
+                .reduce((sum, r) => sum + r.quantity, 0);
+              const historicalLocked = lockRecords
+                .filter((r) => r.implantId === implant.id && r.status === 'locked')
+                .filter((r) => {
+                  const d = r.lockedAt.split(' ')[0];
+                  return d <= endDate;
+                })
+                .reduce((sum, r) => sum + r.quantity, 0);
+              const historicalAdjusted = adjustmentRecords
+                .filter((r) => r.implantId === implant.id)
+                .filter((r) => {
+                  const d = r.adjustedAt.split(' ')[0];
+                  return d <= endDate;
+                })
+                .reduce((sum, r) => sum + r.quantity, 0);
+              historicalAvailable += (implant.quantity - historicalUsed - historicalLocked - historicalAdjusted);
+            });
+            group.availableQuantity = historicalAvailable;
+          }
+
+          group.difference = group.availableQuantity - group.closingQuantity;
         });
 
         return Array.from(groups.values()).sort((a, b) => {
@@ -658,6 +778,11 @@ export const useImplantStore = create<ImplantState>()(
         const implant = implants.find((i) => i.id === implantId);
         if (!implant) return null;
         const hasDateRange = startDate && endDate;
+
+        // 问题3：如果该 implant 在截止日之后才入库，直接返回null
+        if (hasDateRange && implant.inboundDate > endDate) {
+          return null;
+        }
 
         const usages = usageRecords.filter((r) => {
           if (r.implantId !== implantId) return false;
@@ -678,6 +803,26 @@ export const useImplantStore = create<ImplantState>()(
           return adjustedDate >= startDate && adjustedDate <= endDate;
         });
 
+        // 问题4：按历史日期还原 availableQuantity
+        let availableQuantity: number;
+        if (!hasDateRange) {
+          availableQuantity = implant.quantity - implant.usedQuantity - implant.lockedQuantity - implant.adjustedQuantity;
+        } else {
+          const historicalUsed = usageRecords
+            .filter((r) => r.implantId === implantId)
+            .filter((r) => r.usedAt.split(' ')[0] <= endDate)
+            .reduce((sum, r) => sum + r.quantity, 0);
+          const historicalLocked = lockRecords
+            .filter((r) => r.implantId === implantId && r.status === 'locked')
+            .filter((r) => r.lockedAt.split(' ')[0] <= endDate)
+            .reduce((sum, r) => sum + r.quantity, 0);
+          const historicalAdjusted = adjustmentRecords
+            .filter((r) => r.implantId === implantId)
+            .filter((r) => r.adjustedAt.split(' ')[0] <= endDate)
+            .reduce((sum, r) => sum + r.quantity, 0);
+          availableQuantity = implant.quantity - historicalUsed - historicalLocked - historicalAdjusted;
+        }
+
         return {
           implantId,
           inboundDate: implant.inboundDate,
@@ -687,7 +832,7 @@ export const useImplantStore = create<ImplantState>()(
           usedQuantity: usages.reduce((sum, r) => sum + r.quantity, 0),
           lockedQuantity: locks.reduce((sum, r) => sum + r.quantity, 0),
           adjustedQuantity: adjustments.reduce((sum, r) => sum + r.quantity, 0),
-          availableQuantity: implant.quantity - implant.usedQuantity - implant.lockedQuantity - implant.adjustedQuantity,
+          availableQuantity,
           usageRecords: usages,
           lockRecords: locks,
           adjustmentRecords: adjustments

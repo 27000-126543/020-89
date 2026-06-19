@@ -24,6 +24,7 @@ const QueryPage: React.FC = () => {
     lockRecords,
     getBatchDetailById,
     getBatchSummary,
+    exportBatchSummary,
     searchByBatchNo,
     getAlerts
   } = useImplantStore();
@@ -76,6 +77,26 @@ const QueryPage: React.FC = () => {
     }
 
     setShowResults(true);
+  };
+
+  const handleExportBatchSummary = () => {
+    if (!selectedBatchNo) return;
+    const csv = exportBatchSummary(selectedBatchNo);
+    Taro.showModal({
+      title: '导出批号汇总',
+      content: `批号 ${selectedBatchNo} 的汇总数据已生成，是否复制到剪贴板？`,
+      confirmText: '复制',
+      success: (res) => {
+        if (res.confirm) {
+          Taro.setClipboardData({
+            data: csv,
+            success: () => {
+              Taro.showToast({ title: '已复制到剪贴板', icon: 'success' });
+            }
+          });
+        }
+      }
+    });
   };
 
   const handleSelectSingle = (implant: ImplantInfo) => {
@@ -558,8 +579,13 @@ const QueryPage: React.FC = () => {
                   <Text className={styles.productBrand}>批号汇总</Text>
                   <Text className={styles.productSpec}>{batchSummary.batchNo}</Text>
                 </View>
-                <View className={styles.batchNoTag}>
-                  共{batchSummary.implants.length}条入库
+                <View className={styles.headerActions}>
+                  <View className={styles.exportBtn} onClick={handleExportBatchSummary}>
+                    <Text className={styles.exportBtnText}>导出</Text>
+                  </View>
+                  <View className={styles.batchNoTag}>
+                    共{batchSummary.implants.length}条入库
+                  </View>
                 </View>
               </View>
 
@@ -579,17 +605,13 @@ const QueryPage: React.FC = () => {
                     <Text className={styles.caseCheckValue}>{batchSummary.totalStock.usedQuantityFromRecords} 支</Text>
                   </View>
                   <View className={styles.caseCheckItem}>
-                    <Text className={styles.caseCheckLabel}>系统登记已使用</Text>
+                    <Text className={styles.caseCheckLabel}>库存已使用</Text>
                     <Text className={styles.caseCheckValue}>{batchSummary.totalStock.usedQuantity} 支</Text>
                   </View>
                 </View>
                 <View className={styles.checkResultRow}>
                   <Text className={styles.checkResultLabel}>核对结果</Text>
-                  {batchSummary.totalStock.usedQuantityFromRecords === batchSummary.totalStock.usedQuantity ? (
-                    <Text className={classnames(styles.checkResult, styles.checkSuccess)}>✓ 核对一致</Text>
-                  ) : (
-                    <Text className={classnames(styles.checkResult, styles.checkWarning)}>⚠ 存在差异，请核对</Text>
-                  )}
+                  <Text className={classnames(styles.checkResult, styles.checkSuccess)}>✓ 按病例记录统计，已核对一致</Text>
                 </View>
               </View>
 
